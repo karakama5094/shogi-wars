@@ -1,0 +1,99 @@
+export type EvaluationPhase = 'EQUAL' | 'ADVANTAGE' | 'DISADVANTAGE' | 'WINNING' | 'LOSING';
+
+export interface PhaseInfo {
+  phase: EvaluationPhase;
+  label: '互角' | '優勢' | '劣勢' | '勝勢' | '敗勢';
+  colorHex: string;
+  isFavorable: boolean;
+}
+
+export interface EvaluationState {
+  rawScoreCp: number;      // 評価値 (Centipawns: 例 +150, -72)
+  isMate: boolean;          // 詰み検出
+  mateInMoves?: number;     // 詰み手数 (正: プレイヤー勝ち, 負: CP勝ち)
+  winRate: number;          // プレイヤー勝率 (0.0 〜 1.0)
+  phaseInfo: PhaseInfo;     // 5段階ラベル情報
+  pvMoves: string[];        // 読み筋
+  depth: number;            // 探索深さ
+}
+
+export class ShogiEvaluationEngine {
+  // 将棋の評価値-勝率変換スケーリング定数（将棋GUI標準: 600）
+  private static readonly SIGMOID_COEFFICIENT = 600.0;
+
+  /**
+   * 評価値（cp）から勝率（0.0 〜 1.0）へのシグモイド変換
+   * P = 1 / (1 + 10^(-score / 600))
+   */
+  public static calculateWinRate(scoreCp: number): number {
+    const exponent = -scoreCp / this.SIGMOID_COEFFICIENT;
+    const winRate = 1.0 / (1.0 + Math.pow(10, exponent));
+    return Math.max(0.001, Math.min(0.999, winRate));
+  }
+
+  /**
+   * 評価値から5段階の形勢ラベルを自動判定
+   * - 勝勢: +1000 以上 (または先手勝ち詰み)
+   * - 優勢: +301 〜 +999
+   * - 互角: -300 〜 +300
+   * - 劣勢: -999 〜 -301
+   * - 敗勢: -1000 以下 (または後手勝ち詰み)
+   */
+  public static judgePhaseStatus(scoreCp: number, isMate = false, mateInMoves?: number): PhaseInfo {
+    if (isMate && mateInMoves !== undefined) {
+      return mateInMoves > 0
+        ? { phase: 'WINNING', label: '勝勢', colorHex: '#00b0ff', isFavorable: true }
+        : { phase: 'LOSING', label: '敗勢', colorHex: '#ff1744', isFavorable: false };
+    }
+
+    if (scoreCp >= 1000) {
+      return { phase: 'WINNING', label: '勝勢', colorHex: '#00b0ff', isFavorable: true };
+    } else if (scoreCp > 300) {
+      return { phase: 'ADVANTAGE', label: '優勢', colorHex: '#1e88e5', isFavorable: true };
+    } else if (scoreCp >= -300) {
+      return { phase: 'EQUAL', label: '互角', colorHex: '#e2e8f0', isFavorable: true };
+    } else if (scoreCp >= -1000) {
+      return { phase: 'DISADVANTAGE', label: '劣勢', colorHex: '#e53935', isFavorable: false };
+    } else {
+      return { phase: 'LOSING', label: '敗勢', colorHex: '#ff1744', isFavorable: false };
+    }
+  }
+
+  /**
+   * USIエンジンからの "info" 行をパース
+   * 例: "info depth 18 score cp 142 nodes 450123 pv 7g7f 3c3d"
+   */
+  public static parseUsiInfoLine(infoLine: string): Partial<EvaluationState> | null {
+    if (!infoLine.startsWith('info')) return null;
+
+    const tokens = infoLine.split(/\s+/);
+    const result: Partial<EvaluationState> = { pvMoves: [] };
+
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i] === 'depth' && i + 1 < tokens.length) {
+        result.depth = parseInt(tokens[i + 1], 10);
+      } else if (tokens[i] === 'score' && i + 2 < tokens.length) {
+        const scoreType = tokens[i + 1];
+        const scoreVal = parseInt(tokens[i + 2], 10);
+
+        if (scoreType === 'cp') {
+          result.rawScoreCp = scoreVal;
+          result.isMate = false;
+          result.winRate = this.calculateWinRate(scoreVal);
+          result.phaseInfo = this.judgePhaseStatus(scoreVal);
+        } else if (scoreType === 'mate') {
+          result.isMate = true;
+          result.mateInMoves = scoreVal;
+          const virtualCp = scoreVal > 0 ? 30000 : -30000;
+          result.rawScoreCp = virtualCp;
+          result.winRate = scoreVal > 0 ? 0.999 : 0.001;
+          result.phaseInfo = this.judgePhaseStatus(virtualCp, true, scoreVal);
+        }
+      } else if (tokens[i] === 'pv') {
+        result.pvMoves = tokens.slice(i + 1);
+        break;
+      }
+    }
+    return result;
+  }
+}
