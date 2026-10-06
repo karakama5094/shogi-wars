@@ -1,45 +1,3 @@
-スマートフォン上での正常な表示を確認いたしました。
-
-モックアップから「実際に手番を進めて対局できる完全な将棋エンジン」へと拡張し、CPの思考・応手、リアルタイム形勢評価値の動的計算、およびスマートフォン（iPhone/Safari）の下部操作ボタンが隠れないレイアウト調整を反映した実装を納品いたします。
-
----
-
-### 実装・改修内容
-
-1. **実戦対局エンジンの完全実装**
-* 盤面上の駒タップによる移動可能マスのハイライト（青丸：移動先、赤枠：駒取り）。
-* 敵陣（1〜3段目 / 7〜9段目）での成り判定モーダル（「成る」「不成」の選択）。
-* 駒の捕獲と持ち駒台（先手・後手）への追加、および持ち駒の打込み処理（二歩判定・行き所のない駒の制限対応）。
-* 玉将捕獲による勝敗判定および対局終了アラート。
-
-
-2. **5段階CP（AI）の自動着手**
-* プレイヤー着手後、選択したレベル（Lv.1 プロ・レジェンド 〜 Lv.5 アマ・中級者）に応じた思考ルーチンが動き、CPが実際に応手を指します。
-
-
-3. **リアルタイム形勢評価 & グラフの動的更新**
-* 一手進むごとに現在の駒得・前進度から評価値（cp）をリアルタイム再計算。
-* シグモイド関数による勝率計算と5段階判定ラベル（互角・優勢・劣勢・勝勢・敗勢）の更新。
-* 青（自陣）と赤（CP）の形勢バーのアニメーション伸縮、およびSVG折れ線グラフへの新規プロット追加。
-
-
-4. **スマートフォン（iPhone / Safari）UIの最適化**
-* 添付いただいたスクリーンショットで下部ボタンがSafariのツールバーで隠れていた点を改善するため、iOSセーフエリア（`env(safe-area-inset-bottom)`) の余白適用とコンポーネント配置の微調整を行いました。
-
-
-5. **棋神解析・精密解析・リセット機能**
-* 「⚡ 棋神解析」を押すと、現在の局面におけるプレイヤーの最善手を算出して盤面にハイライト表示します。
-* 「🔄 対局リセット」でいつでも初期局面から再戦可能です。
-
-
-
----
-
-### GitHubの `index.html` に貼り付けるコード
-
-GitHubリポジトリの `index.html` の中身を、以下のコードですべて上書き保存（Commit changes）してください。1〜2分後にGitHub PagesのURL（`[https://kama5094.github.io/](https://kama5094.github.io/)【リポジトリ名】/`）へ反映され、スマートフォンから直接対局をお楽しみいただけます。
-
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -81,7 +39,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 6px 6px calc(16px + env(safe-area-inset-bottom, 16px));
+    padding: 6px 6px calc(20px + env(safe-area-inset-bottom, 20px));
     overflow-x: hidden;
   }
 
@@ -112,7 +70,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
     align-items: center;
     gap: 6px;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--gold-light);
     text-shadow: 0 0 8px var(--gold-glow);
   }
@@ -323,7 +281,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
     z-index: 1;
   }
 
-  /* Piece Styling */
+  /* Piece */
   .piece {
     font-size: 18px;
     font-weight: 900;
@@ -489,7 +447,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
     box-shadow: 0 0 8px var(--gold-glow);
   }
 
-  /* Promotion Dialog Modal */
+  /* Modals */
   .modal-overlay {
     position: absolute;
     inset: 0;
@@ -522,9 +480,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
   }
   .level-item.active { border-color: var(--gold); background: #25335c; }
 
-  .promo-dialog {
-    text-align: center;
-  }
+  .promo-dialog { text-align: center; }
   .promo-btn-group {
     display: flex;
     gap: 12px;
@@ -554,7 +510,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
 <div class="app-container">
   <!-- Top Bar -->
   <div class="top-nav">
-    <div class="app-title-badge"><span class="logo-kanji">将</span> WARS CP BATTLE</div>
+    <div class="app-title-badge"><span class="logo-kanji">将</span> WARS CP BATTLE [実戦対局版]</div>
     <button class="level-select-btn" id="openLevelModalBtn">
       <span id="levelBtnText">Lv.1 プロ・レジェンド</span> ▼
     </button>
@@ -690,7 +646,7 @@ GitHubリポジトリの `index.html` の中身を、以下のコードですべ
 
 <script>
 // ==========================================
-// 完全動作する将棋エンジン & ゲームロジック
+// 実装：完全動作将棋エンジン & ゲームロジック
 // ==========================================
 
 const KANJI = {
@@ -703,7 +659,6 @@ const PIECE_VALUES = {
   TO: 650, NKY: 650, NKE: 650, NGI: 650, UM: 1250, RY: 1450
 };
 
-// 盤面初期化
 function getInitialBoard() {
   const b = Array(9).fill(null).map(() => Array(9).fill(null));
   // 後手 (row 0-2)
@@ -740,16 +695,15 @@ function getInitialBoard() {
   return b;
 }
 
-// アプリ全体の状態
 let state = {
   board: getInitialBoard(),
   senteHand: { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 },
   goteHand: { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 },
-  turn: 'sente', // 'sente' | 'gote'
-  selectedSquare: null, // { r, c }
-  selectedStand: null,   // { type, side }
-  legalMoves: [],       // list of { r, c, promo }
-  history: [],          // [{ board, senteHand, goteHand, eval, notation, moveNum }]
+  turn: 'sente',
+  selectedSquare: null,
+  selectedStand: null,
+  legalMoves: [],
+  history: [],
   viewIndex: 0,
   isGameOver: false,
   aiLevel: 1,
@@ -759,7 +713,6 @@ let state = {
   timerInterval: null
 };
 
-// 駒の漢字表示取得
 function getPieceKanji(piece) {
   if (!piece) return "";
   if (!piece.p) return KANJI[piece.type];
@@ -772,7 +725,6 @@ function getPieceKanji(piece) {
   return KANJI[piece.type];
 }
 
-// 駒の移動可能マス計算
 function getLegalMovesForSquare(board, r, c) {
   const p = board[r][c];
   if (!p) return [];
@@ -780,8 +732,7 @@ function getLegalMovesForSquare(board, r, c) {
   const dir = p.side === 'sente' ? -1 : 1;
 
   function addStep(dr, dc) {
-    const nr = r + dr;
-    const nc = c + dc;
+    const nr = r + dr, nc = c + dc;
     if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
       const target = board[nr][nc];
       if (!target || target.side !== p.side) {
@@ -791,8 +742,7 @@ function getLegalMovesForSquare(board, r, c) {
   }
 
   function addRay(dr, dc) {
-    let nr = r + dr;
-    let nc = c + dc;
+    let nr = r + dr, nc = c + dc;
     while (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
       const target = board[nr][nc];
       if (!target) {
@@ -801,32 +751,22 @@ function getLegalMovesForSquare(board, r, c) {
         if (target.side !== p.side) moves.push({ r: nr, c: nc, capture: true });
         break;
       }
-      nr += dr;
-      nc += dc;
+      nr += dr; nc += dc;
     }
   }
 
-  if (p.p && (p.type === 'FU' || p.type === 'KY' || p.type === 'KE' || p.type === 'GI') || p.type === 'KI') {
-    // 金将の動き
-    addStep(dir, 0);
-    addStep(dir, -1);
-    addStep(dir, 1);
-    addStep(0, -1);
-    addStep(0, 1);
-    addStep(-dir, 0);
+  if (p.p && ['FU','KY','KE','GI'].includes(p.type) || p.type === 'KI') {
+    addStep(dir, 0); addStep(dir, -1); addStep(dir, 1);
+    addStep(0, -1); addStep(0, 1); addStep(-dir, 0);
   } else if (p.type === 'FU') {
     addStep(dir, 0);
   } else if (p.type === 'KY') {
     addRay(dir, 0);
   } else if (p.type === 'KE') {
-    addStep(dir * 2, -1);
-    addStep(dir * 2, 1);
+    addStep(dir * 2, -1); addStep(dir * 2, 1);
   } else if (p.type === 'GI') {
-    addStep(dir, 0);
-    addStep(dir, -1);
-    addStep(dir, 1);
-    addStep(-dir, -1);
-    addStep(-dir, 1);
+    addStep(dir, 0); addStep(dir, -1); addStep(dir, 1);
+    addStep(-dir, -1); addStep(-dir, 1);
   } else if (p.type === 'KA') {
     addRay(-1, -1); addRay(-1, 1); addRay(1, -1); addRay(1, 1);
     if (p.p) { addStep(-1, 0); addStep(1, 0); addStep(0, -1); addStep(0, 1); }
@@ -844,12 +784,9 @@ function getLegalMovesForSquare(board, r, c) {
   return moves;
 }
 
-// 持ち駒を打てるマス計算
 function getLegalDrops(board, type, side) {
   const drops = [];
   const isSente = side === 'sente';
-
-  // 二歩チェック
   const nifuCols = new Set();
   if (type === 'FU') {
     for (let c = 0; c < 9; c++) {
@@ -864,7 +801,6 @@ function getLegalDrops(board, type, side) {
   }
 
   for (let r = 0; r < 9; r++) {
-    // 行き所のない駒チェック
     if (type === 'FU' || type === 'KY') {
       if (isSente && r === 0) continue;
       if (!isSente && r === 8) continue;
@@ -884,7 +820,6 @@ function getLegalDrops(board, type, side) {
   return drops;
 }
 
-// 評価関数（先手視点 cp）
 function evaluateBoard(board, senteHand, goteHand) {
   let score = 0;
   for (let r = 0; r < 9; r++) {
@@ -892,8 +827,6 @@ function evaluateBoard(board, senteHand, goteHand) {
       const p = board[r][c];
       if (!p) continue;
       let val = PIECE_VALUES[p.p ? (p.type === 'FU' ? 'TO' : p.type === 'KY' ? 'NKY' : p.type === 'KE' ? 'NKE' : p.type === 'GI' ? 'NGI' : p.type === 'KA' ? 'UM' : 'RY') : p.type];
-      
-      // 前進度・中央制圧ボーナス
       if (p.side === 'sente') {
         val += (8 - r) * 10;
         if (c >= 3 && c <= 5 && r >= 3 && r <= 5) val += 20;
@@ -905,20 +838,15 @@ function evaluateBoard(board, senteHand, goteHand) {
       }
     }
   }
-
-  // 持ち駒価値
   for (let t in senteHand) score += senteHand[t] * (PIECE_VALUES[t] * 1.15);
   for (let t in goteHand) score -= goteHand[t] * (PIECE_VALUES[t] * 1.15);
-
   return Math.round(score);
 }
 
-// シグモイド勝率変換
 function calculateWinRate(evalCp) {
   return 1 / (1 + Math.pow(10, -evalCp / 600));
 }
 
-// 5段階形勢判定
 function getPhaseStatus(evalCp) {
   if (evalCp >= 1000) return { label: "勝勢", class: "winning" };
   if (evalCp > 300) return { label: "優勢", class: "advantage" };
@@ -927,7 +855,6 @@ function getPhaseStatus(evalCp) {
   return { label: "敗勢", class: "losing" };
 }
 
-// AIの指し手決定 (Alpha-Beta / レベル別探索)
 function getBestMoveForAI(board, senteHand, goteHand, level) {
   const allMoves = [];
   for (let r = 0; r < 9; r++) {
@@ -975,7 +902,6 @@ function getBestMoveForAI(board, senteHand, goteHand, level) {
   return allMoves[0];
 }
 
-// 手番実行
 function executeMove(move, side) {
   const isSente = side === 'sente';
   let notation = "";
@@ -1031,7 +957,7 @@ function executeMove(move, side) {
     return;
   }
 
-  // CP手番
+  // CP手番実行
   if (state.turn === 'gote' && !state.isGameOver) {
     document.getElementById("turnIndicator").textContent = "CP思考中...";
     document.getElementById("cpTimer").classList.add("active");
@@ -1053,7 +979,6 @@ function executeMove(move, side) {
   }
 }
 
-// 盤面描画
 function renderBoard() {
   const boardEl = document.getElementById("shogiBoard");
   boardEl.innerHTML = "";
@@ -1101,7 +1026,6 @@ function renderBoard() {
       }
 
       cell.addEventListener("click", () => handleCellClick(r, c));
-
       boardEl.appendChild(cell);
     }
   }
@@ -1109,7 +1033,6 @@ function renderBoard() {
   renderStands();
 }
 
-// 駒台描画
 function renderStands() {
   const cur = state.history[state.viewIndex] || state;
   const sStand = document.getElementById("senteStand");
@@ -1139,7 +1062,6 @@ function renderStands() {
   }
 }
 
-// クリックイベント
 function handleCellClick(r, c) {
   if (state.turn !== 'sente' || state.isGameOver || state.viewIndex !== state.history.length - 1) return;
 
@@ -1271,7 +1193,6 @@ function renderGraph() {
   document.getElementById("currentMovePoint").setAttribute("cy", curY);
 }
 
-// ナビゲーション
 document.getElementById("btnFirst").onclick = () => { state.viewIndex = 0; updateAllUI(); };
 document.getElementById("btnPrev").onclick = () => { if (state.viewIndex > 0) { state.viewIndex--; updateAllUI(); } };
 document.getElementById("btnNext").onclick = () => { if (state.viewIndex < state.history.length - 1) { state.viewIndex++; updateAllUI(); } };
@@ -1386,5 +1307,3 @@ initGame();
 </script>
 </body>
 </html>
-
-```
