@@ -1,1049 +1,260 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>将棋ウォーズ風 CP対戦＆リアルタイム形勢解析アプリ</title>
-<style>
-  :root {
-    --bg-dark: #090d16;
-    --bg-card: #121829;
-    --bg-panel: #182038;
-    --gold: #d4af37;
-    --gold-light: #fbe285;
-    --gold-glow: rgba(212, 175, 55, 0.4);
-    --blue-player: #1e88e5;
-    --blue-glow: rgba(30, 136, 229, 0.5);
-    --red-cp: #e53935;
-    --red-glow: rgba(229, 57, 53, 0.5);
-    --board-wood: #e2ba72;
-    --board-wood-dark: #caa058;
-    --text-main: #f0f4f8;
-    --text-sub: #94a3b8;
-    --border-color: #2a3655;
-  }
+/**
+ * 将棋ウォーズ風 CP対戦将棋アプリ
+ * 形勢評価計算・形勢判定ロジック & USIエンジン通信ハンドラー
+ */
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    user-select: none;
-  }
+// ==========================================
+// 1. 型定義
+// ==========================================
 
-  body {
-    background: radial-gradient(circle at 50% 30%, #151d36 0%, #0a0e1c 70%, #05070f 100%);
-    color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 12px;
-    overflow-x: hidden;
-  }
+export type PlayerSide = 'SENTE' | 'GOTE'; // 先手(自分) | 後手(CP)
 
-  .app-container {
-    width: 100%;
-    max-width: 520px;
-    background: rgba(15, 22, 41, 0.95);
-    border: 2px solid #2d3b5e;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.15);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
+export type EvaluationPhase = 'EQUAL' | 'ADVANTAGE' | 'DISADVANTAGE' | 'WINNING' | 'LOSING';
 
-  /* Header Bar */
-  .top-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 16px;
-    background: linear-gradient(180deg, #1f2947 0%, #131b31 100%);
-    border-bottom: 1px solid var(--gold);
-  }
-  .app-title-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 15px;
-    letter-spacing: 1px;
-    color: var(--gold-light);
-    text-shadow: 0 0 8px var(--gold-glow);
-  }
-  .app-title-badge span.logo-kanji {
-    background: linear-gradient(135deg, #f5c542, #b8860b);
-    color: #0c1020;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-weight: 900;
-    font-size: 13px;
-  }
-  .level-select-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--gold);
-    color: var(--gold-light);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-  }
-  .level-select-btn:hover {
-    background: rgba(212, 175, 55, 0.2);
-    box-shadow: 0 0 10px var(--gold-glow);
-  }
+export interface PhaseInfo {
+  phase: EvaluationPhase;
+  label: '互角' | '優勢' | '劣勢' | '勝勢' | '敗勢';
+  colorHex: string;
+  isFavorable: boolean; // プレイヤー(先手)視点で有利かどうか
+}
 
-  /* Player Profile Ribbon */
-  .player-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 14px;
-    background: rgba(20, 28, 50, 0.85);
-    border-bottom: 1px solid var(--border-color);
-  }
-  .player-bar.player-bottom {
-    border-bottom: none;
-    border-top: 1px solid var(--border-color);
-  }
-  .player-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: 900;
-    font-size: 18px;
-    position: relative;
-    border: 2px solid;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  }
-  .avatar.cp {
-    background: linear-gradient(135deg, #4a1515, #801818);
-    border-color: var(--red-cp);
-    color: #ffcdd2;
-  }
-  .avatar.human {
-    background: linear-gradient(135deg, #103254, #1565c0);
-    border-color: var(--blue-player);
-    color: #bbdefb;
-  }
-  .player-meta {
-    display: flex;
-    flex-direction: column;
-  }
-  .player-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .rank-badge {
-    background: linear-gradient(180deg, #d4af37, #996515);
-    color: #0b0f19;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 1px 6px;
-    border-radius: 3px;
-    text-transform: uppercase;
-  }
-  .player-timer {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 20px;
-    font-weight: 900;
-    color: #ffffff;
-    background: #080c16;
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid #334155;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
-  }
-  .player-timer.active {
-    color: #ffeb3b;
-    border-color: var(--gold);
-    box-shadow: 0 0 10px rgba(255, 235, 59, 0.4), inset 0 2px 5px rgba(0,0,0,0.6);
-  }
+export interface EvaluationState {
+  rawScoreCp: number;      // 評価値 (Centipawns: 例 +150, -72)
+  isMate: boolean;          // 詰み検出フラグ
+  mateInMoves?: number;     // 詰み手数 (正: 先手勝ち, 負: 後手勝ち)
+  winRate: number;          // プレイヤー視点の勝率 (0.0 〜 1.0)
+  phaseInfo: PhaseInfo;     // 5段階判定ラベル
+  pvMoves: string[];        // 読み筋 (Principal Variation)
+  depth: number;            // 探索深さ
+  nodes: number;            // 探索ノード数
+}
 
-  /* Piece Stands (駒台) */
-  .stand-container {
-    display: flex;
-    align-items: center;
-    padding: 4px 14px;
-    background: #0e1424;
-    min-height: 38px;
-    gap: 8px;
-  }
-  .stand-label {
-    font-size: 11px;
-    color: var(--text-sub);
-    width: 32px;
-    font-weight: bold;
-  }
-  .stand-pieces {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .stand-piece-chip {
-    background: #e2ba72;
-    color: #1a1a1a;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-weight: 800;
-    font-size: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-    border: 1px solid #9c7a36;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .stand-piece-chip .count {
-    font-size: 10px;
-    color: #b71c1c;
-  }
+export interface MoveRecord {
+  moveNumber: number;       // 手数 (1〜)
+  side: PlayerSide;         // 手番
+  notation: string;         // 指し手表記 (例: "▲７六歩")
+  evalState: EvaluationState;
+  timestamp: number;
+}
 
-  /* Board Area */
-  .board-wrapper {
-    padding: 8px 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #090e1b;
-  }
-  .shogi-board {
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    grid-template-rows: repeat(9, 1fr);
-    width: 100%;
-    max-width: 440px;
-    aspect-ratio: 9 / 9.6; /* 将棋盤独特のわずかな縦長感 */
-    background: linear-gradient(135deg, var(--board-wood) 0%, var(--board-wood-dark) 100%);
-    border: 4px solid #6d4c1b;
-    border-radius: 4px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(0, 0, 0, 0.4);
-    position: relative;
-  }
-  .board-cell {
-    border: 0.5px solid rgba(74, 48, 14, 0.55);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  .board-cell:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  .board-cell.last-move-cell {
-    background: rgba(255, 215, 0, 0.35) !important;
-    box-shadow: inset 0 0 8px rgba(212, 175, 55, 0.8);
-  }
-  .board-cell.selected-cell {
-    background: rgba(33, 150, 243, 0.4) !important;
-    box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.9);
-  }
+export interface AILevelSpec {
+  level: number;
+  name: string;
+  rankName: string;         // 例: "九段", "初段"
+  rating: number;           // 推定レーティング
+  depthLimit: number;       // 探索深さ上限
+  nodesLimit?: number;      // 探索ノード数上限
+  randomMistakeRate: number;// 緩み手の発生確率 (0.0 〜 1.0)
+  usiOptions: Record<string, string | number | boolean>;
+}
 
-  /* 星（目印） */
-  .star-dot {
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    background: #3e2709;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1;
-  }
+// ==========================================
+// 2. CPレベル設定（5段階）
+// ==========================================
 
-  /* Piece Styling */
-  .piece {
-    font-size: 19px;
-    font-weight: 900;
-    line-height: 1;
-    color: #1a150e;
-    font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", serif;
-    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 86%;
-    height: 90%;
-    clip-path: polygon(15% 100%, 0% 28%, 50% 0%, 100% 28%, 85% 100%);
-    background: linear-gradient(180deg, #f7dfa5 0%, #d8ad5a 100%);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    border: 0.5px solid #8c6a28;
-  }
-  .piece.gote {
-    transform: rotate(180deg);
-  }
-  .piece.promoted {
-    color: #b71c1c;
-    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
-  }
-
-  /* 3. 形勢バー（重要機能） */
-  .eval-bar-section {
-    padding: 8px 14px;
-    background: #0f1527;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-  }
-  .eval-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-    font-size: 12px;
-  }
-  .eval-score-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .score-value {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 16px;
-    font-weight: 900;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: #070a14;
-    border: 1px solid #2e3a59;
-  }
-  .score-value.positive {
-    color: #64b5f6;
-    border-color: #1e88e5;
-  }
-  .score-value.negative {
-    color: #ef9a9a;
-    border-color: #e53935;
-  }
-  .phase-badge {
-    font-size: 12px;
-    font-weight: 800;
-    padding: 2px 10px;
-    border-radius: 12px;
-    letter-spacing: 0.5px;
-  }
-  .phase-badge.equal {
-    background: #334155;
-    color: #e2e8f0;
-  }
-  .phase-badge.advantage {
-    background: linear-gradient(90deg, #1565c0, #1976d2);
-    color: #ffffff;
-    box-shadow: 0 0 8px var(--blue-glow);
-  }
-  .phase-badge.winning {
-    background: linear-gradient(90deg, #0d47a1, #00b0ff);
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(0, 176, 255, 0.7);
-    animation: pulse 1.5s infinite;
-  }
-  .phase-badge.disadvantage {
-    background: linear-gradient(90deg, #c62828, #d32f2f);
-    color: #ffffff;
-    box-shadow: 0 0 8px var(--red-glow);
-  }
-  .phase-badge.losing {
-    background: linear-gradient(90deg, #b71c1c, #ff1744);
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(255, 23, 68, 0.7);
-  }
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
-
-  .eval-bar-track {
-    height: 12px;
-    width: 100%;
-    background: #080c16;
-    border-radius: 6px;
-    display: flex;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid #334155;
-  }
-  .eval-bar-player {
-    height: 100%;
-    background: linear-gradient(90deg, #1565c0, #2196f3);
-    transition: width 0.3s ease;
-  }
-  .eval-bar-cp {
-    height: 100%;
-    background: linear-gradient(90deg, #f44336, #c62828);
-    transition: width 0.3s ease;
-  }
-  .eval-bar-center-pin {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #ffffff;
-    z-index: 2;
-    box-shadow: 0 0 4px #ffffff;
-  }
-
-  /* 4. 形勢推移グラフ */
-  .graph-section {
-    padding: 6px 14px;
-    background: #0b1020;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .graph-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-sub);
-    margin-bottom: 2px;
-  }
-  .graph-container {
-    width: 100%;
-    height: 64px;
-    background: #070a14;
-    border: 1px solid #1e293b;
-    border-radius: 4px;
-    position: relative;
-  }
-  svg.eval-chart {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-
-  /* 5. 操作パネル＆補助ボタン */
-  .control-panel {
-    display: flex;
-    flex-direction: column;
-    padding: 8px 14px;
-    background: #11172a;
-    gap: 8px;
-  }
-  .move-controller {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-  }
-  .nav-btn {
-    flex: 1;
-    background: #1e2942;
-    border: 1px solid #334155;
-    color: #e2e8f0;
-    padding: 6px 0;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .nav-btn:hover {
-    background: #2b395b;
-    border-color: var(--gold);
-    color: #ffffff;
-  }
-  .nav-btn.primary {
-    background: linear-gradient(180deg, #1e3a8a, #172554);
-    border-color: #3b82f6;
-    color: #93c5fd;
-  }
-
-  .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1.3fr;
-    gap: 8px;
-  }
-  .action-btn {
-    padding: 8px 0;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    transition: all 0.2s;
-  }
-  .action-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid #334155;
-    color: #cbd5e1;
-  }
-  .action-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-  }
-  .action-btn.kishin {
-    background: linear-gradient(135deg, #d4af37 0%, #b8860b 50%, #f5c542 100%);
-    border: 1px solid #ffe082;
-    color: #0b0f19;
-    box-shadow: 0 0 12px var(--gold-glow);
-    animation: goldShimmer 2s infinite alternate;
-  }
-  @keyframes goldShimmer {
-    0% { box-shadow: 0 0 8px rgba(212, 175, 55, 0.4); }
-    100% { box-shadow: 0 0 18px rgba(255, 215, 0, 0.8); }
-  }
-
-  /* Level Select Modal */
-  .modal-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    padding: 20px;
-  }
-  .modal-overlay.active {
-    display: flex;
-  }
-  .modal-content {
-    background: #141b31;
-    border: 2px solid var(--gold);
-    border-radius: 12px;
-    width: 100%;
-    max-width: 400px;
-    padding: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
-  }
-  .modal-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--gold-light);
-    margin-bottom: 12px;
-    text-align: center;
-    border-bottom: 1px solid #2a375a;
-    padding-bottom: 8px;
-  }
-  .level-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .level-item {
-    background: #1a2340;
-    border: 1px solid #2d3b5e;
-    padding: 10px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.2s;
-  }
-  .level-item:hover, .level-item.active {
-    border-color: var(--gold);
-    background: #25335c;
-    box-shadow: 0 0 10px var(--gold-glow);
-  }
-  .level-item-info h4 {
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffffff;
-  }
-  .level-item-info p {
-    font-size: 11px;
-    color: var(--text-sub);
-    margin-top: 2px;
-  }
-  .level-item-badge {
-    font-size: 11px;
-    font-weight: 800;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: #090e1c;
-    border: 1px solid #3b82f6;
-    color: #93c5fd;
-  }
-  .modal-close-btn {
-    margin-top: 14px;
-    width: 100%;
-    padding: 8px;
-    background: #334155;
-    border: none;
-    border-radius: 6px;
-    color: #ffffff;
-    font-weight: bold;
-    cursor: pointer;
-  }
-</style>
-</head>
-<body>
-
-<div class="app-container">
-  <!-- Top Navigation Bar -->
-  <div class="top-nav">
-    <div class="app-title-badge">
-      <span class="logo-kanji">将</span>
-      WARS CP BATTLE
-    </div>
-    <button class="level-select-btn" id="openLevelModalBtn">
-      <span>Lv.1 プロ・レジェンド</span>
-      <span style="font-size:10px;">▼</span>
-    </button>
-  </div>
-
-  <!-- Opponent (CP) Header -->
-  <div class="player-bar">
-    <div class="player-info">
-      <div class="avatar cp">CP</div>
-      <div class="player-meta">
-        <div class="player-name">
-          <span id="cpName">AI棋神・極</span>
-          <span class="rank-badge" id="cpRank">九段</span>
-        </div>
-        <span style="font-size: 10px; color: var(--text-sub);" id="cpSpecDesc">探索深さ: 28手 / NNUE最強評価</span>
-      </div>
-    </div>
-    <div class="player-timer" id="cpTimer">08:42</div>
-  </div>
-
-  <!-- Gote Stand (CPの持ち駒) -->
-  <div class="stand-container">
-    <span class="stand-label">後手</span>
-    <div class="stand-pieces" id="goteStand">
-      <div class="stand-piece-chip">歩 <span class="count">×2</span></div>
-      <div class="stand-piece-chip">桂</div>
-    </div>
-  </div>
-
-  <!-- 9x9 Shogi Board -->
-  <div class="board-wrapper">
-    <div class="shogi-board" id="shogiBoard">
-      <!-- 81マス動的生成 -->
-    </div>
-  </div>
-
-  <!-- Sente Stand (自分の持ち駒) -->
-  <div class="stand-container">
-    <span class="stand-label">先手</span>
-    <div class="stand-pieces" id="senteStand">
-      <div class="stand-piece-chip">角</div>
-      <div class="stand-piece-chip">銀</div>
-      <div class="stand-piece-chip">歩 <span class="count">×1</span></div>
-    </div>
-  </div>
-
-  <!-- Player Header -->
-  <div class="player-bar player-bottom">
-    <div class="player-info">
-      <div class="avatar human">貴</div>
-      <div class="player-meta">
-        <div class="player-name">
-          あなた
-          <span class="rank-badge">二段</span>
-        </div>
-        <span style="font-size: 10px; color: #64b5f6;">先手番 (▲)</span>
-      </div>
-    </div>
-    <div class="player-timer active" id="playerTimer">09:15</div>
-  </div>
-
-  <!-- 3. 形勢評価・数値化バー -->
-  <div class="eval-bar-section">
-    <div class="eval-header">
-      <div class="eval-score-label">
-        <span style="color:var(--text-sub); font-size:11px;">現在形勢</span>
-        <div class="score-value positive" id="evalScoreText">+142</div>
-        <div class="phase-badge advantage" id="evalPhaseBadge">優勢</div>
-      </div>
-      <div style="font-size:11px; color:#94a3b8;" id="winRateText">
-        勝率: <b style="color:#64b5f6;">57.1%</b> (あなた)
-      </div>
-    </div>
-
-    <div class="eval-bar-track">
-      <div class="eval-bar-player" id="playerBarFill" style="width: 57.1%;"></div>
-      <div class="eval-bar-cp" id="cpBarFill" style="width: 42.9%;"></div>
-      <div class="eval-bar-center-pin"></div>
-    </div>
-  </div>
-
-  <!-- 4. 形勢推移グラフ (SVG折れ線グラフ) -->
-  <div class="graph-section">
-    <div class="graph-header">
-      <span>形勢グラフ推移 (手数: <b id="currentMoveNumText">47手目</b>)</span>
-      <span style="color:#64748b;">青: 優勢 / 赤: 劣勢</span>
-    </div>
-    <div class="graph-container">
-      <svg class="eval-chart" id="evalChart" viewBox="0 0 460 60" preserveAspectRatio="none">
-        <!-- ゼロライン (互角) -->
-        <line x1="0" y1="30" x2="460" y2="30" stroke="#334155" stroke-dasharray="2,2" stroke-width="1"></line>
-        <!-- グラフ線 -->
-        <path id="graphPath" d="" fill="none" stroke="#60a5fa" stroke-width="2.2" stroke-linejoin="round" />
-        <!-- 現在手ピン -->
-        <circle id="currentMovePoint" cx="230" cy="30" r="4" fill="#fbbf24" stroke="#ffffff" stroke-width="1.5" />
-      </svg>
-    </div>
-  </div>
-
-  <!-- 5. 操作パネル＆補助ボタン -->
-  <div class="control-panel">
-    <div class="move-controller">
-      <button class="nav-btn" id="btnFirst">|◀ 最初</button>
-      <button class="nav-btn" id="btnPrev">◀ 戻る</button>
-      <button class="nav-btn" id="btnNext">進む ▶</button>
-      <button class="nav-btn" id="btnLast">最後 ▶|</button>
-      <button class="nav-btn primary" id="btnLive">● 現局面</button>
-    </div>
-    <div class="action-buttons">
-      <button class="action-btn secondary" id="btnDeepAnalysis">
-        🔍 精密解析
-      </button>
-      <button class="action-btn secondary" id="btnEditBoard">
-        ✏️ 局面編集
-      </button>
-      <button class="action-btn kishin" id="btnKishin">
-        ⚡ 棋神解析
-      </button>
-    </div>
-  </div>
-
-  <!-- Level Selection Modal -->
-  <div class="modal-overlay" id="levelModal">
-    <div class="modal-content">
-      <div class="modal-title">CP (AI) レベル選択</div>
-      <div class="level-list">
-        <div class="level-item active" data-level="1" data-name="プロ・レジェンド" data-rank="九段" data-desc="探索深さ: 28手 / 最強NNUE深層探索">
-          <div class="level-item-info">
-            <h4>1. プロ・レジェンド</h4>
-            <p>最強クラスAI、人間離れした超高精度な読み</p>
-          </div>
-          <span class="level-item-badge">レート 3200</span>
-        </div>
-        <div class="level-item" data-level="2" data-name="プロ・上級者" data-rank="七段" data-desc="探索深さ: 20手 / プロ公式戦上位棋士クラス">
-          <div class="level-item-info">
-            <h4>2. プロ・上級者</h4>
-            <p>プロ上位レベル、緩みのない盤石な指し回し</p>
-          </div>
-          <span class="level-item-badge">レート 2800</span>
-        </div>
-        <div class="level-item" data-level="3" data-name="プロ・中級者" data-rank="四段" data-desc="探索深さ: 14手 / 新鋭プロ棋士水準">
-          <div class="level-item-info">
-            <h4>3. プロ・中級者</h4>
-            <p>プロ平均レベル、正確な受けと鋭い攻め</p>
-          </div>
-          <span class="level-item-badge">レート 2400</span>
-        </div>
-        <div class="level-item" data-level="4" data-name="アマ・上級者" data-rank="五段" data-desc="探索深さ: 9手 / アマ強豪クラス">
-          <div class="level-item-info">
-            <h4>4. アマ・上級者</h4>
-            <p>アマチュア高段者レベル、定跡・攻め筋に精通</p>
-          </div>
-          <span class="level-item-badge">レート 2000</span>
-        </div>
-        <div class="level-item" data-level="5" data-name="アマ・中級者" data-rank="初段" data-desc="探索深さ: 5手 / 適度な緩み手を含む">
-          <div class="level-item-info">
-            <h4>5. アマ・中級者</h4>
-            <p>アマ初段レベル、楽しく上達できる対戦相手</p>
-          </div>
-          <span class="level-item-badge">レート 1600</span>
-        </div>
-      </div>
-      <button class="modal-close-btn" id="closeLevelModalBtn">決定して戻る</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  // 初期対局サンプル局面（矢倉戦法の進行サンプル）
-  // 9x9マスの標準初期配置とサンプルの駒データ
-  const initialBoard = [
-    ["香", "桂", "銀", "金", "王", "金", "銀", "桂", "香"],
-    ["", "飛", "", "", "", "", "", "角", ""],
-    ["歩", "歩", "歩", "歩", "歩", "歩", "歩", "歩", "歩"],
-    ["", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", ""],
-    ["歩", "歩", "歩", "歩", "歩", "歩", "歩", "歩", "歩"],
-    ["", "角", "", "", "", "", "", "飛", ""],
-    ["香", "桂", "銀", "金", "玉", "金", "銀", "桂", "香"]
-  ];
-
-  // 評価値推移の模擬サンプルデータ（手数ごとの評価値 cp）
-  const sampleMatchHistory = [
-    { move: 1, notation: "▲７六歩", eval: 35 },
-    { move: 2, notation: "△３四歩", eval: 20 },
-    { move: 3, notation: "▲２六歩", eval: 45 },
-    { move: 4, notation: "△８四歩", eval: 30 },
-    { move: 5, notation: "▲２五歩", eval: 60 },
-    { move: 6, notation: "△８五歩", eval: 50 },
-    { move: 7, notation: "▲７八金", eval: 75 },
-    { move: 8, notation: "△３二金", eval: 65 },
-    { move: 9, notation: "▲２四歩", eval: 90 },
-    { move: 10, notation: "△同　歩", eval: 80 },
-    { move: 11, notation: "▲同　飛", eval: 95 },
-    { move: 12, notation: "△８六歩", eval: 85 },
-    { move: 13, notation: "▲同　歩", eval: 90 },
-    { move: 14, notation: "△同　飛", eval: 70 },
-    { move: 15, notation: "▲３四飛", eval: 120 },
-    { move: 16, notation: "△３三銀", eval: -40 },
-    { move: 17, notation: "▲３六飛", eval: 65 },
-    { move: 18, notation: "△８四飛", eval: 80 },
-    { move: 19, notation: "▲２六飛", eval: 110 },
-    { move: 20, notation: "△２二歩", eval: 130 },
-    { move: 21, notation: "▲６八銀", eval: 125 },
-    { move: 22, notation: "△６二銀", eval: 140 },
-    { move: 23, notation: "▲４八玉", eval: 115 },
-    { move: 24, notation: "△４二玉", eval: 105 },
-    { move: 25, notation: "▲３八玉", eval: 140 },
-    { move: 26, notation: "△５二金", eval: 135 },
-    { move: 27, notation: "▲７七銀", eval: 150 },
-    { move: 28, notation: "△７四歩", eval: 120 },
-    { move: 29, notation: "▲８八銀", eval: 90 },
-    { move: 30, notation: "△７三桂", eval: 80 },
-    { move: 31, notation: "▲８七金", eval: 110 },
-    { move: 32, notation: "△８一飛", eval: 95 },
-    { move: 33, notation: "▲６六歩", eval: 130 },
-    { move: 34, notation: "△６四歩", eval: 120 },
-    { move: 35, notation: "▲５八金", eval: 145 },
-    { move: 36, notation: "△６三銀", eval: 135 },
-    { move: 37, notation: "▲９六歩", eval: 160 },
-    { move: 38, notation: "△９四歩", eval: 155 },
-    { move: 39, notation: "▲１六歩", eval: 180 },
-    { move: 40, notation: "△１四歩", eval: 170 },
-    { move: 41, notation: "▲２八銀", eval: 210 },
-    { move: 42, notation: "△５四歩", eval: 195 },
-    { move: 43, notation: "▲３六歩", eval: 230 },
-    { move: 44, notation: "△４四歩", eval: 180 },
-    { move: 45, notation: "▲３七桂", eval: 240 },
-    { move: 46, notation: "△４三金右", eval: 190 },
-    { move: 47, notation: "▲４六歩", eval: 320 } // 47手目: 優勢
-  ];
-
-  let currentMoveIndex = sampleMatchHistory.length - 1;
-
-  // 盤面構築
-  const boardEl = document.getElementById("shogiBoard");
-  function renderBoard() {
-    boardEl.innerHTML = "";
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        const cell = document.createElement("div");
-        cell.className = "board-cell";
-        cell.dataset.row = r;
-        cell.dataset.col = c;
-
-        // 星（4隅の点） (2,2), (2,6), (6,2), (6,6)
-        if ((r === 2 || r === 5) && (c === 2 || c === 5)) {
-          const star = document.createElement("div");
-          star.className = "star-dot";
-          star.style.bottom = "-2.5px";
-          star.style.right = "-2.5px";
-          cell.appendChild(star);
-        }
-
-        const pieceChar = initialBoard[r][c];
-        if (pieceChar) {
-          const piece = document.createElement("div");
-          piece.className = "piece";
-          if (r < 3) piece.classList.add("gote");
-          piece.textContent = pieceChar;
-          cell.appendChild(piece);
-        }
-
-        // サンプル着手ハイライト
-        if (r === 5 && c === 5) {
-          cell.classList.add("last-move-cell");
-        }
-
-        cell.addEventListener("click", () => {
-          document.querySelectorAll(".board-cell").forEach(el => el.classList.remove("selected-cell"));
-          cell.classList.add("selected-cell");
-        });
-
-        boardEl.appendChild(cell);
-      }
+export const AI_LEVEL_CONFIGS: Record<number, AILevelSpec> = {
+  1: {
+    level: 1,
+    name: 'プロ・レジェンド',
+    rankName: '九段',
+    rating: 3200,
+    depthLimit: 30,
+    randomMistakeRate: 0.0,
+    usiOptions: {
+      Threads: 4,
+      Hash: 512,
+      SkillLevel: 20,
+      BookDepthLimit: 40,
+    }
+  },
+  2: {
+    level: 2,
+    name: 'プロ・上級者',
+    rankName: '七段',
+    rating: 2800,
+    depthLimit: 20,
+    nodesLimit: 3_000_000,
+    randomMistakeRate: 0.0,
+    usiOptions: {
+      Threads: 2,
+      Hash: 256,
+      SkillLevel: 18,
+    }
+  },
+  3: {
+    level: 3,
+    name: 'プロ・中級者',
+    rankName: '四段',
+    rating: 2400,
+    depthLimit: 14,
+    nodesLimit: 800_000,
+    randomMistakeRate: 0.02,
+    usiOptions: {
+      Threads: 1,
+      Hash: 128,
+      SkillLevel: 14,
+    }
+  },
+  4: {
+    level: 4,
+    name: 'アマ・上級者',
+    rankName: '五段',
+    rating: 2000,
+    depthLimit: 9,
+    nodesLimit: 200_000,
+    randomMistakeRate: 0.08,
+    usiOptions: {
+      Threads: 1,
+      Hash: 64,
+      SkillLevel: 10,
+    }
+  },
+  5: {
+    level: 5,
+    name: 'アマ・中級者',
+    rankName: '初段',
+    rating: 1600,
+    depthLimit: 5,
+    nodesLimit: 50_000,
+    randomMistakeRate: 0.18,
+    usiOptions: {
+      Threads: 1,
+      Hash: 32,
+      SkillLevel: 6,
     }
   }
+};
 
-  // 評価値から勝率へのシグモイド変換（将棋GUI標準: 定数600）
-  function calculateWinRate(evalCp) {
-    return 1 / (1 + Math.pow(10, -evalCp / 600));
+// ==========================================
+// 3. 形勢評価・勝率計算エンジン
+// ==========================================
+
+export class ShogiEvaluationEngine {
+  // 将棋の標準スケーリング定数
+  private static readonly SIGMOID_COEFFICIENT = 600.0;
+
+  /**
+   * 評価値（cp）から勝率（0.0 〜 1.0）へのシグモイド変換
+   * P = 1 / (1 + 10^(-score / 600))
+   */
+  public static calculateWinRate(scoreCp: number): number {
+    const exponent = -scoreCp / this.SIGMOID_COEFFICIENT;
+    const winRate = 1.0 / (1.0 + Math.pow(10, exponent));
+    return Math.max(0.001, Math.min(0.999, winRate));
   }
 
-  // 5段階形勢判定ロジック
-  function getPhaseStatus(evalCp) {
-    if (evalCp >= 1000) {
-      return { label: "勝勢", class: "winning", code: "WINNING" };
-    } else if (evalCp > 300) {
-      return { label: "優勢", class: "advantage", code: "ADVANTAGE" };
-    } else if (evalCp >= -300) {
-      return { label: "互角", class: "equal", code: "EQUAL" };
-    } else if (evalCp >= -1000) {
-      return { label: "劣勢", class: "disadvantage", code: "DISADVANTAGE" };
+  /**
+   * 評価値から5段階の形勢ラベルを判定
+   * - 勝勢: +1000 以上 (または先手勝ち詰み)
+   * - 優勢: +301 〜 +999
+   * - 互角: -300 〜 +300
+   * - 劣勢: -999 〜 -301
+   * - 敗勢: -1000 以下 (または後手勝ち詰み)
+   */
+  public static judgePhaseStatus(scoreCp: number, isMate = false, mateInMoves?: number): PhaseInfo {
+    if (isMate && mateInMoves !== undefined) {
+      return mateInMoves > 0
+        ? { phase: 'WINNING', label: '勝勢', colorHex: '#00b0ff', isFavorable: true }
+        : { phase: 'LOSING', label: '敗勢', colorHex: '#ff1744', isFavorable: false };
+    }
+
+    if (scoreCp >= 1000) {
+      return { phase: 'WINNING', label: '勝勢', colorHex: '#00b0ff', isFavorable: true };
+    } else if (scoreCp > 300) {
+      return { phase: 'ADVANTAGE', label: '優勢', colorHex: '#1e88e5', isFavorable: true };
+    } else if (scoreCp >= -300) {
+      return { phase: 'EQUAL', label: '互角', colorHex: '#e2e8f0', isFavorable: true };
+    } else if (scoreCp >= -1000) {
+      return { phase: 'DISADVANTAGE', label: '劣勢', colorHex: '#e53935', isFavorable: false };
     } else {
-      return { label: "敗勢", class: "losing", code: "LOSING" };
+      return { phase: 'LOSING', label: '敗勢', colorHex: '#ff1744', isFavorable: false };
     }
   }
 
-  // 評価バーとグラフの更新
-  function updateEvaluationUI() {
-    const currentData = sampleMatchHistory[currentMoveIndex];
-    const evalCp = currentData.eval;
-    const winRate = calculateWinRate(evalCp);
-    const playerPercent = (winRate * 100).toFixed(1);
-    const cpPercent = (100 - playerPercent).toFixed(1);
+  /**
+   * USIエンジンからの "info" 行をパース
+   */
+  public static parseUsiInfoLine(infoLine: string): Partial<EvaluationState> | null {
+    if (!infoLine.startsWith('info')) return null;
 
-    const phase = getPhaseStatus(evalCp);
+    const tokens = infoLine.split(/\s+/);
+    const result: Partial<EvaluationState> = { pvMoves: [] };
 
-    // テキスト更新
-    const scoreTextEl = document.getElementById("evalScoreText");
-    scoreTextEl.textContent = (evalCp > 0 ? "+" : "") + evalCp;
-    scoreTextEl.className = "score-value " + (evalCp >= 0 ? "positive" : "negative");
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i] === 'depth' && i + 1 < tokens.length) {
+        result.depth = parseInt(tokens[i + 1], 10);
+      } else if (tokens[i] === 'nodes' && i + 1 < tokens.length) {
+        result.nodes = parseInt(tokens[i + 1], 10);
+      } else if (tokens[i] === 'score' && i + 2 < tokens.length) {
+        const scoreType = tokens[i + 1];
+        const scoreVal = parseInt(tokens[i + 2], 10);
 
-    const badgeEl = document.getElementById("evalPhaseBadge");
-    badgeEl.textContent = phase.label;
-    badgeEl.className = "phase-badge " + phase.class;
-
-    const winRateTextEl = document.getElementById("winRateText");
-    winRateTextEl.innerHTML = `勝率: <b style="color:${evalCp >= 0 ? '#64b5f6' : '#ef9a9a'}">${playerPercent}%</b> (あなた)`;
-
-    // バー幅更新
-    document.getElementById("playerBarFill").style.width = playerPercent + "%";
-    document.getElementById("cpBarFill").style.width = cpPercent + "%";
-
-    // 手数表示
-    document.getElementById("currentMoveNumText").textContent = `${currentData.move}手目 ${currentData.notation}`;
-
-    // グラフ更新
-    renderGraph();
-  }
-
-  // SVG形勢推移グラフ描画
-  function renderGraph() {
-    const totalMoves = sampleMatchHistory.length;
-    const width = 460;
-    const height = 60;
-    const zeroY = height / 2; // y=30が互角
-
-    // 最大振れ幅を±1500で正規化
-    const maxRange = 1500;
-
-    let pathD = "";
-    let currentX = 0;
-    let currentY = zeroY;
-
-    sampleMatchHistory.forEach((item, index) => {
-      const x = (index / (totalMoves - 1)) * (width - 20) + 10;
-      // y座標: 上が先手有利(+), 下が後手有利(-)
-      const clampedEval = Math.max(-maxRange, Math.min(maxRange, item.eval));
-      const y = zeroY - (clampedEval / maxRange) * (height / 2 - 6);
-
-      if (index === 0) {
-        pathD += `M ${x} ${y}`;
-      } else {
-        pathD += ` L ${x} ${y}`;
+        if (scoreType === 'cp') {
+          result.rawScoreCp = scoreVal;
+          result.isMate = false;
+          result.winRate = this.calculateWinRate(scoreVal);
+          result.phaseInfo = this.judgePhaseStatus(scoreVal);
+        } else if (scoreType === 'mate') {
+          result.isMate = true;
+          result.mateInMoves = scoreVal;
+          const virtualCp = scoreVal > 0 ? 30000 : -30000;
+          result.rawScoreCp = virtualCp;
+          result.winRate = scoreVal > 0 ? 0.999 : 0.001;
+          result.phaseInfo = this.judgePhaseStatus(virtualCp, true, scoreVal);
+        }
+      } else if (tokens[i] === 'pv') {
+        result.pvMoves = tokens.slice(i + 1);
+        break;
       }
+    }
+    return result;
+  }
+}
 
-      if (index === currentMoveIndex) {
-        currentX = x;
-        currentY = y;
-      }
+// ==========================================
+// 4. 形勢推移マネージャー
+// ==========================================
+
+export class MatchHistoryManager {
+  private history: MoveRecord[] = [];
+
+  public addMove(moveNumber: number, side: PlayerSide, notation: string, evalState: EvaluationState): void {
+    this.history.push({
+      moveNumber,
+      side,
+      notation,
+      evalState,
+      timestamp: Date.now()
     });
-
-    document.getElementById("graphPath").setAttribute("d", pathD);
-    const pointEl = document.getElementById("currentMovePoint");
-    pointEl.setAttribute("cx", currentX);
-    pointEl.setAttribute("cy", currentY);
   }
 
-  // 棋譜送り・巻き戻し操作
-  document.getElementById("btnFirst").addEventListener("click", () => {
-    currentMoveIndex = 0;
-    updateEvaluationUI();
-  });
-  document.getElementById("btnPrev").addEventListener("click", () => {
-    if (currentMoveIndex > 0) {
-      currentMoveIndex--;
-      updateEvaluationUI();
-    }
-  });
-  document.getElementById("btnNext").addEventListener("click", () => {
-    if (currentMoveIndex < sampleMatchHistory.length - 1) {
-      currentMoveIndex++;
-      updateEvaluationUI();
-    }
-  });
-  document.getElementById("btnLast").addEventListener("click", () => {
-    currentMoveIndex = sampleMatchHistory.length - 1;
-    updateEvaluationUI();
-  });
-  document.getElementById("btnLive").addEventListener("click", () => {
-    currentMoveIndex = sampleMatchHistory.length - 1;
-    updateEvaluationUI();
-  });
+  public getHistory(): MoveRecord[] {
+    return this.history;
+  }
 
-  // モーダル操作
-  const modal = document.getElementById("levelModal");
-  document.getElementById("openLevelModalBtn").addEventListener("click", () => {
-    modal.classList.add("active");
-  });
-  document.getElementById("closeLevelModalBtn").addEventListener("click", () => {
-    modal.classList.remove("active");
-  });
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.classList.remove("active");
-  });
+  public getMoveAt(index: number): MoveRecord | undefined {
+    return this.history[index];
+  }
 
-  // レベル選択処理
-  document.querySelectorAll(".level-item").forEach(item => {
-    item.addEventListener("click", () => {
-      document.querySelectorAll(".level-item").forEach(i => i.classList.remove("active"));
-      item.classList.add("active");
+  /**
+   * UIの形勢グラフ描画用に正規化された座標配列 (x, y) を生成
+   */
+  public generateSvgGraphPoints(svgWidth = 460, svgHeight = 60, clampMaxCp = 1500): { x: number; y: number; eval: number }[] {
+    if (this.history.length === 0) return [];
 
-      const levelName = item.dataset.name;
-      const levelRank = item.dataset.rank;
-      const levelDesc = item.dataset.desc;
+    const zeroY = svgHeight / 2;
+    const totalMoves = this.history.length;
 
-      document.getElementById("openLevelModalBtn").querySelector("span").textContent = `Lv.${item.dataset.level} ${levelName}`;
-      document.getElementById("cpName").textContent = `AI棋神・${levelName}`;
-      document.getElementById("cpRank").textContent = levelRank;
-      document.getElementById("cpSpecDesc").textContent = levelDesc;
+    return this.history.map((record, index) => {
+      const x = totalMoves > 1
+        ? (index / (totalMoves - 1)) * (svgWidth - 20) + 10
+        : svgWidth / 2;
 
-      modal.classList.remove("active");
+      const evalCp = record.evalState.rawScoreCp;
+      const clampedEval = Math.max(-clampMaxCp, Math.min(clampMaxCp, evalCp));
+      const y = zeroY - (clampedEval / clampMaxCp) * (svgHeight / 2 - 4);
+
+      return { x, y, eval: evalCp };
     });
-  });
-
-  // 補助ボタンのアクションシミュレーション
-  document.getElementById("btnKishin").addEventListener("click", () => {
-    alert("⚡【棋神解析発動】\n最善手: ▲３七桂（評価値 +320 継続）\n読み筋: ▲３七桂 △４五歩 ▲同　歩 △同　桂 ▲同　桂");
-  });
-  document.getElementById("btnDeepAnalysis").addEventListener("click", () => {
-    alert("🔍【精密解析モード】\n候補手上位3手:\n1位: ▲３七桂 (+320, 期待勝率 62.1%)\n2位: ▲２五飛 (+210, 期待勝率 58.3%)\n3位: ▲６五歩 (+165, 期待勝率 56.4%)");
-  });
-  document.getElementById("btnEditBoard").addEventListener("click", () => {
-    alert("✏️【局面編集モード】\n駒の再配置や詰将棋・指定局面からの研究が可能です。");
-  });
-
-  // 初期化実行
-  renderBoard();
-  updateEvaluationUI();
-</script>
-</body>
-</html>
+  }
+}
