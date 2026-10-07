@@ -679,7 +679,7 @@
 
 <script>
 // ==========================================
-// 3段階AI（プロレジェンド・プロ・アマチュア）＆詰み判定将棋エンジン
+// 堅牢化将棋エンジン & 評価値完全整数化
 // ==========================================
 
 const KANJI = {
@@ -692,31 +692,54 @@ const PIECE_VALS = {
   TO: 600, NKY: 600, NKE: 600, NGI: 600, UM: 1250, RY: 1450
 };
 
-// 後手用のオープニング定跡ブック (初手〜序盤の手筋)
+const HAND_PIECE_TYPES = ['FU', 'KY', 'KE', 'GI', 'KI', 'KA', 'HI'];
+
+// 駒の価値を安全に取得（NaN・undefinedを完全防止）
+function getPieceValue(piece) {
+  if (!piece) return 0;
+  if (piece.type === 'OU') return PIECE_VALS.OU;
+  if (piece.type === 'KI') return PIECE_VALS.KI;
+  if (piece.p) {
+    if (piece.type === 'FU') return PIECE_VALS.TO;
+    if (piece.type === 'KY') return PIECE_VALS.NKY;
+    if (piece.type === 'KE') return PIECE_VALS.NKE;
+    if (piece.type === 'GI') return PIECE_VALS.NGI;
+    if (piece.type === 'KA') return PIECE_VALS.UM;
+    if (piece.type === 'HI') return PIECE_VALS.RY;
+  }
+  return PIECE_VALS[piece.type] || 0;
+}
+
+// 後手用のオープニング定跡ブック
 const OPENING_BOOK = [
-  // 7六歩(6,2 -> 5,2)に対して -> 3四歩(2,6 -> 3,6)
   { trigger: (b) => !b[6][2] && b[5][2]?.type === 'FU' && b[2][6]?.type === 'FU',
     move: { from: { r: 2, c: 6 }, to: { r: 3, c: 6 }, promo: false } },
-  // 2六歩(6,7 -> 5,7)に対して -> 8四歩(2,1 -> 3,1)
   { trigger: (b) => !b[6][7] && b[5][7]?.type === 'FU' && b[2][1]?.type === 'FU',
     move: { from: { r: 2, c: 1 }, to: { r: 3, c: 1 }, promo: false } },
-  // 2五歩(5,7 -> 4,7)に対して -> 3三角(1,1 -> 2,2)
   { trigger: (b) => !b[5][7] && b[4][7]?.type === 'FU' && b[1][1]?.type === 'KA',
     move: { from: { r: 1, c: 1 }, to: { r: 2, c: 2 }, promo: false } },
-  // 7八金(8,3 -> 7,3)に対して -> 8五歩(3,1 -> 4,1)
   { trigger: (b) => !b[8][3] && b[7][3]?.type === 'KI' && b[3][1]?.type === 'FU',
     move: { from: { r: 3, c: 1 }, to: { r: 4, c: 1 }, promo: false } },
-  // 6八銀(8,2 -> 7,2)に対して -> 6二銀(0,6 -> 1,6)
   { trigger: (b) => !b[8][2] && b[7][2]?.type === 'GI' && b[0][6]?.type === 'GI',
     move: { from: { r: 0, c: 6 }, to: { r: 1, c: 6 }, promo: false } },
-  // 4八玉(8,4 -> 7,5)に対して -> 4二玉(0,4 -> 1,3)
   { trigger: (b) => !b[8][4] && b[7][5]?.type === 'OU' && b[0][4]?.type === 'OU',
     move: { from: { r: 0, c: 4 }, to: { r: 1, c: 3 }, promo: false } }
 ];
 
+function cloneBoard(b) {
+  return b.map(row => row.map(cell => cell ? { type: cell.type, side: cell.side, p: !!cell.p } : null));
+}
+
+function cloneHand(h) {
+  const res = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
+  for (const t of HAND_PIECE_TYPES) {
+    res[t] = Number(h[t]) || 0;
+  }
+  return res;
+}
+
 function getInitialBoard() {
   const b = Array(9).fill(null).map(() => Array(9).fill(null));
-  // 後手 (0-2段目)
   b[0] = [
     { type: 'KY', side: 'gote', p: false },
     { type: 'KE', side: 'gote', p: false },
@@ -732,7 +755,6 @@ function getInitialBoard() {
   b[1][7] = { type: 'KA', side: 'gote', p: false };
   for (let c = 0; c < 9; c++) b[2][c] = { type: 'FU', side: 'gote', p: false };
 
-  // 先手 (6-8段目)
   for (let c = 0; c < 9; c++) b[6][c] = { type: 'FU', side: 'sente', p: false };
   b[7][1] = { type: 'KA', side: 'sente', p: false };
   b[7][7] = { type: 'HI', side: 'sente', p: false };
@@ -752,8 +774,8 @@ function getInitialBoard() {
 
 let state = {
   board: getInitialBoard(),
-  senteHand: { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 },
-  goteHand: { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 },
+  senteHand: cloneHand({}),
+  goteHand: cloneHand({}),
   turn: 'sente',
   selectedSquare: null,
   selectedStand: null,
@@ -770,14 +792,14 @@ let state = {
 
 function getPieceKanji(piece) {
   if (!piece) return "";
-  if (!piece.p) return KANJI[piece.type];
+  if (!piece.p) return KANJI[piece.type] || "";
   if (piece.type === 'FU') return KANJI.TO;
   if (piece.type === 'KY') return KANJI.NKY;
   if (piece.type === 'KE') return KANJI.NKE;
   if (piece.type === 'GI') return KANJI.NGI;
   if (piece.type === 'KA') return KANJI.UM;
   if (piece.type === 'HI') return KANJI.RY;
-  return KANJI[piece.type];
+  return KANJI[piece.type] || "";
 }
 
 function getPseudoLegalMoves(board, r, c) {
@@ -974,7 +996,7 @@ function generateStrictLegalMoves(board, senteHand, goteHand, side) {
               to: { r: dest.r, c: dest.c },
               promo,
               isDrop: false,
-              capturePiece: captured ? captured.type : null
+              capturePiece: (captured && captured.type !== 'OU') ? captured.type : null
             });
           }
 
@@ -985,8 +1007,8 @@ function generateStrictLegalMoves(board, senteHand, goteHand, side) {
     }
   }
 
-  for (const type in hand) {
-    if (hand[type] > 0) {
+  for (const type of HAND_PIECE_TYPES) {
+    if ((hand[type] || 0) > 0) {
       const dropSquares = getLegalDrops(board, type, side);
       for (const dest of dropSquares) {
         board[dest.r][dest.c] = { type, side, p: false };
@@ -1006,7 +1028,7 @@ function generateStrictLegalMoves(board, senteHand, goteHand, side) {
   return strictMoves;
 }
 
-// 局面評価（駒得・浮き駒ペナルティ・前進度・玉の囲い）
+// 局面評価関数（安全・整数保証）
 function evaluatePosition(board, senteHand, goteHand) {
   let score = 0;
   const opp = { sente: 'gote', gote: 'sente' };
@@ -1015,7 +1037,7 @@ function evaluatePosition(board, senteHand, goteHand) {
     for (let c = 0; c < 9; c++) {
       const p = board[r][c];
       if (!p) continue;
-      let val = PIECE_VALS[p.p ? (p.type === 'FU' ? 'TO' : p.type === 'KY' ? 'NKY' : p.type === 'KE' ? 'NKE' : p.type === 'GI' ? 'NGI' : p.type === 'KA' ? 'UM' : 'RY') : p.type];
+      let val = getPieceValue(p);
 
       // 浮き駒（ただ取り）ペナルティ
       const isAttacked = isSquareAttacked(board, r, c, opp[p.side]);
@@ -1024,7 +1046,7 @@ function evaluatePosition(board, senteHand, goteHand) {
         val -= Math.round(val * 0.5);
       }
 
-      // 前進・中央制圧
+      // 前進・中央制圧ボーナス
       if (p.side === 'sente') {
         val += (8 - r) * 12;
         if (c >= 3 && c <= 5 && r >= 3 && r <= 5) val += 20;
@@ -1037,21 +1059,34 @@ function evaluatePosition(board, senteHand, goteHand) {
     }
   }
 
-  for (let t in senteHand) score += senteHand[t] * (PIECE_VALS[t] * 1.15);
-  for (let t in goteHand) score -= goteHand[t] * (PIECE_VALS[t] * 1.15);
+  // 持ち駒の安全な加算
+  for (const t of HAND_PIECE_TYPES) {
+    const sCount = Number(senteHand[t]) || 0;
+    const gCount = Number(goteHand[t]) || 0;
+    const handVal = Math.round((PIECE_VALS[t] || 0) * 1.15);
+    score += sCount * handVal;
+    score -= gCount * handVal;
+  }
 
-  return score;
+  // 必ず整数に丸め、NaN防止
+  return Math.round(score) || 0;
 }
 
+// 勝率計算（NaN防止・0.001〜0.999クランプ）
 function calculateWinRate(evalCp) {
-  return 1 / (1 + Math.pow(10, -evalCp / 600));
+  if (isNaN(evalCp) || !isFinite(evalCp)) return 0.5;
+  const exponent = -evalCp / 600;
+  const winRate = 1 / (1 + Math.pow(10, exponent));
+  if (isNaN(winRate) || !isFinite(winRate)) return 0.5;
+  return Math.max(0.001, Math.min(0.999, winRate));
 }
 
 function getPhaseStatus(evalCp) {
-  if (evalCp >= 1000) return { label: "勝勢", class: "winning" };
-  if (evalCp > 300) return { label: "優勢", class: "advantage" };
-  if (evalCp >= -300) return { label: "互角", class: "equal" };
-  if (evalCp >= -1000) return { label: "劣勢", class: "disadvantage" };
+  const score = Math.round(evalCp) || 0;
+  if (score >= 1000) return { label: "勝勢", class: "winning" };
+  if (score > 300) return { label: "優勢", class: "advantage" };
+  if (score >= -300) return { label: "互角", class: "equal" };
+  if (score >= -1000) return { label: "劣勢", class: "disadvantage" };
   return { label: "敗勢", class: "losing" };
 }
 
@@ -1072,9 +1107,9 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
   }
 
   legalMoves.sort((a, b) => {
-    let sa = a.capturePiece ? PIECE_VALS[a.capturePiece] * 2 : 0;
+    let sa = a.capturePiece ? (PIECE_VALS[a.capturePiece] || 0) * 2 : 0;
     if (a.promo) sa += 300;
-    let sb = b.capturePiece ? PIECE_VALS[b.capturePiece] * 2 : 0;
+    let sb = b.capturePiece ? (PIECE_VALS[b.capturePiece] || 0) * 2 : 0;
     if (b.promo) sb += 300;
     return sb - sa;
   });
@@ -1085,11 +1120,13 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
       let captured = null;
       if (m.isDrop) {
         board[m.to.r][m.to.c] = { type: m.type, side: 'sente', p: false };
-        senteHand[m.type]--;
+        senteHand[m.type] = (senteHand[m.type] || 0) - 1;
       } else {
         const p = board[m.from.r][m.from.c];
         captured = board[m.to.r][m.to.c];
-        if (captured) senteHand[captured.type]++;
+        if (captured && captured.type !== 'OU') {
+          senteHand[captured.type] = (senteHand[captured.type] || 0) + 1;
+        }
         board[m.to.r][m.to.c] = { type: p.type, side: 'sente', p: m.promo || p.p };
         board[m.from.r][m.from.c] = null;
       }
@@ -1098,12 +1135,14 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
 
       if (m.isDrop) {
         board[m.to.r][m.to.c] = null;
-        senteHand[m.type]++;
+        senteHand[m.type] = (senteHand[m.type] || 0) + 1;
       } else {
         const p = board[m.to.r][m.to.c];
         board[m.from.r][m.from.c] = { type: p.type, side: 'sente', p: !m.promo && p.p };
         board[m.to.r][m.to.c] = captured;
-        if (captured) senteHand[captured.type]--;
+        if (captured && captured.type !== 'OU') {
+          senteHand[captured.type] = (senteHand[captured.type] || 0) - 1;
+        }
       }
 
       maxEval = Math.max(maxEval, ev);
@@ -1117,11 +1156,13 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
       let captured = null;
       if (m.isDrop) {
         board[m.to.r][m.to.c] = { type: m.type, side: 'gote', p: false };
-        goteHand[m.type]--;
+        goteHand[m.type] = (goteHand[m.type] || 0) - 1;
       } else {
         const p = board[m.from.r][m.from.c];
         captured = board[m.to.r][m.to.c];
-        if (captured) goteHand[captured.type]++;
+        if (captured && captured.type !== 'OU') {
+          goteHand[captured.type] = (goteHand[captured.type] || 0) + 1;
+        }
         board[m.to.r][m.to.c] = { type: p.type, side: 'gote', p: m.promo || p.p };
         board[m.from.r][m.from.c] = null;
       }
@@ -1130,12 +1171,14 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
 
       if (m.isDrop) {
         board[m.to.r][m.to.c] = null;
-        goteHand[m.type]++;
+        goteHand[m.type] = (goteHand[m.type] || 0) + 1;
       } else {
         const p = board[m.to.r][m.to.c];
         board[m.from.r][m.from.c] = { type: p.type, side: 'gote', p: !m.promo && p.p };
         board[m.to.r][m.to.c] = captured;
-        if (captured) goteHand[captured.type]--;
+        if (captured && captured.type !== 'OU') {
+          goteHand[captured.type] = (goteHand[captured.type] || 0) - 1;
+        }
       }
 
       minEval = Math.min(minEval, ev);
@@ -1146,57 +1189,61 @@ function alphaBetaSearch(board, senteHand, goteHand, depth, alpha, beta, isMaxim
   }
 }
 
-// 3段階AIの指し手決定
-function getBestMoveForAI(board, senteHand, goteHand, level) {
-  // 1. 定跡チェック (プロ・レジェンドおよびプロは定跡を採用)
+// 3段階AIの指し手決定（クローン盤で探索し、原盤汚染を完全防止）
+function getBestMoveForAI(rawBoard, rawSenteHand, rawGoteHand, level) {
+  // 1. 定跡チェック
   if (level <= 2 && state.history.length <= 10) {
     for (const entry of OPENING_BOOK) {
-      if (entry.trigger(board)) {
-        const fromP = board[entry.move.from.r][entry.move.from.c];
+      if (entry.trigger(rawBoard)) {
+        const fromP = rawBoard[entry.move.from.r][entry.move.from.c];
         if (fromP && fromP.side === 'gote') return entry.move;
       }
     }
   }
 
-  const legalMoves = generateStrictLegalMoves(board, senteHand, goteHand, 'gote');
+  // 探索専用の独立クローン
+  const searchBoard = cloneBoard(rawBoard);
+  const searchSenteHand = cloneHand(rawSenteHand);
+  const searchGoteHand = cloneHand(rawGoteHand);
+
+  const legalMoves = generateStrictLegalMoves(searchBoard, searchSenteHand, searchGoteHand, 'gote');
   if (legalMoves.length === 0) return null;
 
-  // レベル別探索パラメータ
-  // 1: プロ・レジェンド（深さ3, ノイズ0 = 最善手を確実に実行）
-  // 2: プロ（深さ2〜3, ほぼ最善手）
-  // 3: アマチュア（深さ1〜2, 若干のブレ）
   const searchDepth = (level === 1) ? 3 : (level === 2) ? 2 : 1;
-
   let bestMove = legalMoves[0];
   let bestScore = 999999;
 
   for (const m of legalMoves) {
     let captured = null;
     if (m.isDrop) {
-      board[m.to.r][m.to.c] = { type: m.type, side: 'gote', p: false };
-      goteHand[m.type]--;
+      searchBoard[m.to.r][m.to.c] = { type: m.type, side: 'gote', p: false };
+      searchGoteHand[m.type] = (searchGoteHand[m.type] || 0) - 1;
     } else {
-      const p = board[m.from.r][m.from.c];
-      captured = board[m.to.r][m.to.c];
-      if (captured) goteHand[captured.type]++;
-      board[m.to.r][m.to.c] = { type: p.type, side: 'gote', p: m.promo || p.p };
-      board[m.from.r][m.from.c] = null;
+      const p = searchBoard[m.from.r][m.from.c];
+      captured = searchBoard[m.to.r][m.to.c];
+      if (captured && captured.type !== 'OU') {
+        searchGoteHand[captured.type] = (searchGoteHand[captured.type] || 0) + 1;
+      }
+      searchBoard[m.to.r][m.to.c] = { type: p.type, side: 'gote', p: m.promo || p.p };
+      searchBoard[m.from.r][m.from.c] = null;
     }
 
-    const val = alphaBetaSearch(board, senteHand, goteHand, searchDepth - 1, -999999, 999999, true);
+    const val = alphaBetaSearch(searchBoard, searchSenteHand, searchGoteHand, searchDepth - 1, -999999, 999999, true);
 
     if (m.isDrop) {
-      board[m.to.r][m.to.c] = null;
-      goteHand[m.type]++;
+      searchBoard[m.to.r][m.to.c] = null;
+      searchGoteHand[m.type] = (searchGoteHand[m.type] || 0) + 1;
     } else {
-      const p = board[m.to.r][m.to.c];
-      board[m.from.r][m.from.c] = { type: p.type, side: 'gote', p: !m.promo && p.p };
-      board[m.to.r][m.to.c] = captured;
-      if (captured) goteHand[captured.type]--;
+      const p = searchBoard[m.to.r][m.to.c];
+      searchBoard[m.from.r][m.from.c] = { type: p.type, side: 'gote', p: !m.promo && p.p };
+      searchBoard[m.to.r][m.to.c] = captured;
+      if (captured && captured.type !== 'OU') {
+        searchGoteHand[captured.type] = (searchGoteHand[captured.type] || 0) - 1;
+      }
     }
 
-    // プロ・レジェンドはノイズ一切なし (確実に最善手を打つ)
-    const noise = (level === 1) ? 0 : (level === 2) ? (Math.random() - 0.5) * 50 : (Math.random() - 0.5) * 350;
+    // Lv.1 プロ・レジェンドはノイズ一切なし（常に最善手を確実に打つ）
+    const noise = (level === 1) ? 0 : (level === 2) ? Math.round((Math.random() - 0.5) * 50) : Math.round((Math.random() - 0.5) * 350);
     const finalScore = val + noise;
 
     if (finalScore < bestScore) {
@@ -1214,17 +1261,17 @@ function executeMove(move, side) {
 
   if (move.isDrop) {
     state.board[move.to.r][move.to.c] = { type: move.type, side, p: false };
-    if (isSente) state.senteHand[move.type]--;
-    else state.goteHand[move.type]--;
+    if (isSente) state.senteHand[move.type] = Math.max(0, (state.senteHand[move.type] || 0) - 1);
+    else state.goteHand[move.type] = Math.max(0, (state.goteHand[move.type] || 0) - 1);
     notation = (isSente ? "▲" : "△") + `${9 - move.to.c}${move.to.r + 1}${KANJI[move.type]}打`;
   } else {
     const origin = state.board[move.from.r][move.from.c];
     const target = state.board[move.to.r][move.to.c];
 
-    if (target) {
+    if (target && target.type !== 'OU') {
       const cap = target.type;
-      if (isSente) state.senteHand[cap]++;
-      else state.goteHand[cap]++;
+      if (isSente) state.senteHand[cap] = (state.senteHand[cap] || 0) + 1;
+      else state.goteHand[cap] = (state.goteHand[cap] || 0) + 1;
     }
 
     state.board[move.to.r][move.to.c] = {
@@ -1244,7 +1291,7 @@ function executeMove(move, side) {
 
   let currentEval = evaluatePosition(state.board, state.senteHand, state.goteHand);
 
-  // 詰み判定 (王手 かつ 合法手が0)
+  // 詰み判定
   let isMated = false;
   if (oppLegalMoves.length === 0) {
     isMated = true;
@@ -1252,10 +1299,13 @@ function executeMove(move, side) {
     currentEval = isSente ? 30000 : -30000;
   }
 
+  // 評価値を確実に丸めて記録
+  currentEval = Math.round(currentEval) || 0;
+
   state.history.push({
-    board: JSON.parse(JSON.stringify(state.board)),
-    senteHand: { ...state.senteHand },
-    goteHand: { ...state.goteHand },
+    board: cloneBoard(state.board),
+    senteHand: cloneHand(state.senteHand),
+    goteHand: cloneHand(state.goteHand),
     eval: currentEval,
     notation: notation,
     moveNum: state.history.length,
@@ -1268,7 +1318,6 @@ function executeMove(move, side) {
 
   updateAllUI();
 
-  // 詰み終了演出 (王を取る必要なく即終了)
   if (isMated) {
     const banner = document.getElementById("mateBanner");
     const title = document.getElementById("mateTitle");
@@ -1376,8 +1425,8 @@ function renderStands() {
   sStand.innerHTML = "";
   gStand.innerHTML = "";
 
-  for (let type in cur.senteHand) {
-    const count = cur.senteHand[type];
+  for (const type of HAND_PIECE_TYPES) {
+    const count = Number(cur.senteHand[type]) || 0;
     if (count > 0) {
       const chip = document.createElement("div");
       chip.className = "stand-piece-chip" + (state.selectedStand && state.selectedStand.type === type ? " selected" : "");
@@ -1387,8 +1436,8 @@ function renderStands() {
     }
   }
 
-  for (let type in cur.goteHand) {
-    const count = cur.goteHand[type];
+  for (const type of HAND_PIECE_TYPES) {
+    const count = Number(cur.goteHand[type]) || 0;
     if (count > 0) {
       const chip = document.createElement("div");
       chip.className = "stand-piece-chip";
@@ -1487,16 +1536,22 @@ function updateAllUI() {
   updateEvaluationUI();
 }
 
+// 形勢・勝率UIの更新（厳密に整数とクランプ値を保証）
 function updateEvaluationUI() {
   const currentSnapshot = state.history[state.viewIndex] || {
     eval: 0,
     notation: "開始局面",
     moveNum: 0
   };
-  const evalCp = currentSnapshot.eval;
+
+  // 評価値を確実に整数化し、NaNを0にフォールバック
+  let evalCp = Math.round(Number(currentSnapshot.eval));
+  if (isNaN(evalCp) || !isFinite(evalCp)) evalCp = 0;
+
   const winRate = calculateWinRate(evalCp);
-  const playerPercent = (winRate * 100).toFixed(1);
-  const cpPercent = (100 - playerPercent).toFixed(1);
+  let playerPercent = (winRate * 100).toFixed(1);
+  if (isNaN(parseFloat(playerPercent))) playerPercent = "50.0";
+  const cpPercent = (100 - parseFloat(playerPercent)).toFixed(1);
   const phase = getPhaseStatus(evalCp);
 
   const scoreEl = document.getElementById("evalScoreText");
@@ -1528,9 +1583,10 @@ function renderGraph() {
 
   state.history.forEach((item, index) => {
     const x = (index / (state.history.length - 1)) * (width - 20) + 10;
-    const clamped = Math.max(-maxRange, Math.min(maxRange, item.eval));
+    const rawVal = Math.round(Number(item.eval)) || 0;
+    const clamped = Math.max(-maxRange, Math.min(maxRange, rawVal));
     const y = zeroY - (clamped / maxRange) * (height / 2 - 4);
-    pathD += (index === 0 ? "M " : " L ") + `${x} ${y}`;
+    pathD += (index === 0 ? "M " : " L ") + `${x.toFixed(1)} ${y.toFixed(1)}`;
     if (index === state.viewIndex) { curX = x; curY = y; }
   });
 
@@ -1568,35 +1624,44 @@ document.getElementById("btnKishin").onclick = () => {
     alert("現在、あなたの手番ではありません。");
     return;
   }
-  const senteMoves = generateStrictLegalMoves(state.board, state.senteHand, state.goteHand, 'sente');
+  const searchBoard = cloneBoard(state.board);
+  const searchSenteHand = cloneHand(state.senteHand);
+  const searchGoteHand = cloneHand(state.goteHand);
+
+  const senteMoves = generateStrictLegalMoves(searchBoard, searchSenteHand, searchGoteHand, 'sente');
   if (senteMoves.length === 0) {
     alert("指せる合法手がありません。");
     return;
   }
+
   let best = senteMoves[0], bestScore = -999999;
   for (const m of senteMoves) {
     let captured = null;
     if (m.isDrop) {
-      state.board[m.to.r][m.to.c] = { type: m.type, side: 'sente', p: false };
-      state.senteHand[m.type]--;
+      searchBoard[m.to.r][m.to.c] = { type: m.type, side: 'sente', p: false };
+      searchSenteHand[m.type] = (searchSenteHand[m.type] || 0) - 1;
     } else {
-      const p = state.board[m.from.r][m.from.c];
-      captured = state.board[m.to.r][m.to.c];
-      if (captured) state.senteHand[captured.type]++;
-      state.board[m.to.r][m.to.c] = { type: p.type, side: 'sente', p: m.promo || p.p };
-      state.board[m.from.r][m.from.c] = null;
+      const p = searchBoard[m.from.r][m.from.c];
+      captured = searchBoard[m.to.r][m.to.c];
+      if (captured && captured.type !== 'OU') {
+        searchSenteHand[captured.type] = (searchSenteHand[captured.type] || 0) + 1;
+      }
+      searchBoard[m.to.r][m.to.c] = { type: p.type, side: 'sente', p: m.promo || p.p };
+      searchBoard[m.from.r][m.from.c] = null;
     }
 
-    const val = alphaBetaSearch(state.board, state.senteHand, state.goteHand, 2, -999999, 999999, false);
+    const val = alphaBetaSearch(searchBoard, searchSenteHand, searchGoteHand, 2, -999999, 999999, false);
 
     if (m.isDrop) {
-      state.board[m.to.r][m.to.c] = null;
-      state.senteHand[m.type]++;
+      searchBoard[m.to.r][m.to.c] = null;
+      searchSenteHand[m.type] = (searchSenteHand[m.type] || 0) + 1;
     } else {
-      const p = state.board[m.to.r][m.to.c];
-      state.board[m.from.r][m.from.c] = { type: p.type, side: 'sente', p: !m.promo && p.p };
-      state.board[m.to.r][m.to.c] = captured;
-      if (captured) state.senteHand[captured.type]--;
+      const p = searchBoard[m.to.r][m.to.c];
+      searchBoard[m.from.r][m.from.c] = { type: p.type, side: 'sente', p: !m.promo && p.p };
+      searchBoard[m.to.r][m.to.c] = captured;
+      if (captured && captured.type !== 'OU') {
+        searchSenteHand[captured.type] = (searchSenteHand[captured.type] || 0) - 1;
+      }
     }
 
     if (val > bestScore) {
@@ -1620,7 +1685,7 @@ document.getElementById("btnKishin").onclick = () => {
 };
 
 document.getElementById("btnDeepAnalysis").onclick = () => {
-  const currentEval = state.history[state.viewIndex]?.eval || 0;
+  const currentEval = Math.round(Number(state.history[state.viewIndex]?.eval)) || 0;
   alert(`🔍【精密解析レポート】\n現在手数: ${state.viewIndex}手目\n評価値: ${currentEval > 0 ? "+" : ""}${currentEval} cp\n形勢判定: ${getPhaseStatus(currentEval).label}\nアドバイス: 浮き駒を作らず、玉の守りを固めてから攻め筋を模索してください。`);
 };
 
@@ -1666,8 +1731,8 @@ function startTimer() {
 function initGame() {
   document.getElementById("mateBanner").classList.remove("active");
   state.board = getInitialBoard();
-  state.senteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
-  state.goteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
+  state.senteHand = cloneHand({});
+  state.goteHand = cloneHand({});
   state.turn = 'sente';
   state.selectedSquare = null;
   state.selectedStand = null;
@@ -1677,9 +1742,9 @@ function initGame() {
   state.senteTime = 600;
   state.goteTime = 600;
   state.history = [{
-    board: JSON.parse(JSON.stringify(state.board)),
-    senteHand: { ...state.senteHand },
-    goteHand: { ...state.goteHand },
+    board: cloneBoard(state.board),
+    senteHand: cloneHand(state.senteHand),
+    goteHand: cloneHand(state.goteHand),
     eval: 0,
     notation: "開始局面",
     moveNum: 0,
