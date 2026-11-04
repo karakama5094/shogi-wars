@@ -15,7 +15,10 @@
       if(generation!==this.generation) return;
       const data=event.data;
       if(data.type==='error'){this.destroy(new Error(data.message));return;}
-      if(data.type==='line') this.onLine(data.line);
+      if(data.type==='line'){
+        if(this.state==='searching' && /\bscore (cp|mate) /.test(data.line))this.infoLine=data.line;
+        this.onLine(data.line);
+      }
       if(this.pending && data.type===this.pending.type && this.pending.predicate(data))this.pending.resolve(data);
     }
     send(command) {
@@ -48,12 +51,12 @@
     async search(sfen,{movetime=1000,infinite=false,moves=null}={}) {
       if(this.state!=='ready')throw new Error('Engine is not ready');
       if(typeof sfen!=='string'||/[\r\n]/.test(sfen))throw new Error('Invalid SFEN');
-      if(!Number.isInteger(movetime)||movetime<50||movetime>5000)throw new Error('Invalid search duration');
+      if(!Number.isInteger(movetime)||movetime<50||movetime>10000)throw new Error('Invalid search duration');
       if(moves!==null && (!Array.isArray(moves)||moves.some(m=>typeof m!=='string'||!/^([1-9][a-i][1-9][a-i]\+?|[PLNSGBR]\*[1-9][a-i])$/.test(m))))throw new Error('Invalid USI history');
-      this.send(moves===null?'position sfen '+sfen:'position startpos'+(moves.length?' moves '+moves.join(' '):''));this.state='searching';const started=performance.now();
+      this.send(moves===null?'position sfen '+sfen:'position startpos'+(moves.length?' moves '+moves.join(' '):''));this.infoLine=null;this.state='searching';const started=performance.now();
       try{
         const result=await this.request(infinite?'go infinite':`go movetime ${movetime}`,'bestmove',infinite?8000:movetime+5000);
-        this.state='ready';return {bestmove:result.line.split(/\s+/)[1],elapsedMs:performance.now()-started};
+        this.state='ready';return {bestmove:result.line.split(/\s+/)[1],elapsedMs:performance.now()-started,infoLine:this.infoLine};
       }catch(error){this.destroy(error);throw error;}
     }
     async metrics(){

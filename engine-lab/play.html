@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>最強CPU・1手5秒（試験） | shogi-wars</title>
-  <link rel="stylesheet" href="./strong-play.css">
+  <title>AI対局・棋神降臨・棋神解析 | shogi-wars</title>
+  <link rel="stylesheet" href="./strong-play.css?v=7d6378e227ce">
 </head>
 <body class="flex flex-col items-center justify-start pb-10">
 
@@ -30,7 +30,7 @@
           <h1 class="wars-title font-black text-lg md:text-xl tracking-wider">将棋ウォーズ</h1>
           <span class="text-[10px] font-bold tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">WEB EDITION</span>
         </div>
-        <p class="text-[11px] text-slate-400">やねうら王・最強設定 / 1手最大5秒（試験）</p>
+        <p class="text-[11px] text-slate-400">名人・プロ・アマ / 棋神降臨・解析（無限）</p>
       </div>
     </div>
 
@@ -55,15 +55,42 @@
     </div>
   </header>
 
-  <section class="strong-panel" aria-label="最強CPUの状態">
-    <a href="../">通常対局へ戻る</a>
-    <h2>最強CPU・1手最大5秒（試験）</h2>
-    <p>やねうら王＋水匠Petite。弱化なし・探索1スレッド。画面を離れると対局と時計を一時停止します。長時間の安定性・発熱は検証中です。</p>
-    <p id="strong-status" role="status" aria-live="polite">CPUを準備しています…</p>
-    <div><button id="strong-pause" type="button">一時停止</button><button id="strong-resume" type="button" disabled>再開・再接続</button></div>
-    <p><a href="./vendor/COPYING.txt">GPLv3ライセンス</a> · <a href="./vendor/NOTICE.txt">エンジン出典・対応ソース</a></p>
-  </section>
-  <!-- Main Container -->
+  <section class="strong-panel" aria-label="AI対局の状態">
+  <a href="../">通常対局へ戻る</a>
+  <h2>AI対局・棋神</h2>
+  <div class="level-scale" aria-label="CPUの思考時間">
+    <span>名人 <b>10秒</b></span><span>プロ <b>5秒</b></span><span>アマ <b>1秒</b></span>
+  </div>
+  <p>「新対局」でCPUを選択できます。いずれも弱化なしで、指定時間内の推奨手を指します。名称は思考時間の区分で、実在の段級位を表すものではありません。</p>
+  <p id="strong-status" role="status" aria-live="polite">CPUを準備しています…</p>
+  <div><button id="strong-pause" type="button">一時停止</button><button id="strong-resume" type="button" disabled>再開・再接続</button></div>
+  <p>画面を離れると対局と時計を一時停止します。棋神降臨はあなたの手番を最大10秒考えて1手代指しします。利用回数に制限はありません。</p>
+  <p><a href="./vendor/COPYING.txt">GPLv3ライセンス</a> · <a href="./vendor/NOTICE.txt">エンジン出典・対応ソース</a></p>
+</section>
+<section class="strong-panel evaluation-panel" aria-label="形勢分布">
+  <h2>形勢分布 <span id="advantage-number">未評価</span></h2>
+  <p id="advantage-description">CPUが思考すると表示されます。</p>
+  <div class="advantage-axis"><span>後手 −100</span><span>互角 0</span><span>先手 ＋100</span></div>
+  <div class="advantage-bar" role="img" aria-label="未評価" id="advantage-bar">
+    <div id="advantage-gote"></div><div id="advantage-sente"></div><i></i>
+  </div>
+  <div class="advantage-axis"><span id="gote-share">後手 —</span><span id="sente-share">先手 —</span></div>
+  <p class="explain">先手が有利なら＋、後手が有利なら−。表示はエンジン評価を−100〜＋100に縮めた目安で、勝率ではありません。</p>
+  <h3>形勢の推移</h3>
+  <svg id="evaluation-graph" viewBox="0 0 600 190" role="img" aria-label="まだ評価がありません"></svg>
+</section>
+<section id="analysis-panel" hidden class="strong-panel" aria-label="棋神解析">
+  <h2>棋神解析（無限）</h2>
+  <p>対局終了後、全局面の評価と推奨手を解析できます。何度でも実行でき、結果から過去の盤面を確認できます。</p>
+  <label for="analysis-time">1局面の解析時間</label>
+  <select id="analysis-time"><option value="1000">1秒</option><option value="5000">5秒</option><option value="10000">10秒</option></select>
+  <div><button id="analysis-start" disabled>棋神解析を開始（無限）</button><button id="analysis-stop" disabled>解析を停止</button><button id="analysis-copy" disabled>解析結果をコピー</button></div>
+  <p id="analysis-status" role="status" aria-live="polite">対局終了後に利用できます。</p>
+  <p id="analysis-review">結果の手数を押すと、その局面を表示します。</p>
+  <div id="analysis-results" class="analysis-results"></div>
+</section>
+
+<!-- Main Container -->
   <main class="w-full max-w-4xl p-2 md:p-4 flex flex-col md:flex-row gap-4 justify-center items-start">
 
     <!-- Left Column: Shogi Board Area -->
@@ -175,10 +202,7 @@
 
       <!-- Kishin (棋神降臨) Special Ability Button -->
       <div class="w-full max-w-[430px] mt-3 flex gap-2">
-        <button id="btn-kishin" hidden class="kishin-btn flex-1 py-3 px-4 rounded-xl text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg tracking-wider border-0">
-          <span>⚡</span>
-          <span>棋神降臨！ (残 <span id="kishin-count">3</span> 回)</span>
-        </button>
+        <button id="btn-kishin" class="kishin-btn flex-1 py-3 px-4 rounded-xl text-slate-950 font-black text-base" type="button">⚡ 棋神降臨（無限）</button>
       </div>
 
     </div>
@@ -212,7 +236,7 @@
         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
           <div>手数: <b id="move-count" class="text-slate-200">0手</b></div>
           <div>ルール: <b id="match-rule-label" class="text-slate-200">10分切れ負け</b></div>
-          <div>AI強さ: <b id="ai-level-label" class="text-amber-400">最強設定・最大5秒</b></div>
+          <div>AI強さ: <b id="ai-level-label" class="text-amber-400">プロ・最大5秒</b></div>
           <div>王手判定: <b id="check-status-label" class="text-slate-400">なし</b></div>
         </div>
       </div>
@@ -293,7 +317,8 @@
       </div>
 
       <div class="space-y-4 text-xs font-semibold">
-        <!-- Time Control -->
+        <div><label for="cpu-level">CPUのレベル</label><select id="cpu-level"><option value="meijin">名人 — 10秒</option><option value="pro" selected>プロ — 5秒</option><option value="amateur">アマ — 1秒</option></select><p>選択は「対局開始」で反映されます。</p></div>
+<!-- Time Control -->
         <div>
           <label class="block text-slate-400 mb-1.5">対局ルール (持ち時間)</label>
           <div class="grid grid-cols-3 gap-2">
@@ -399,10 +424,13 @@
   </div>
 
   <!-- JavaScript Game Engine -->
-  <script src="../src/domain/rules.js"></script>
-  <script src="../src/engine/usi-position.js"></script>
-  <script src="./engine-client.js"></script>
-  <script src="../src/engine/strong-cpu.js"></script>
-  <script src="./strong-play.js"></script>
+  <script src="../src/domain/rules.js?v=425341af75d8"></script>
+  <script src="../src/engine/usi-position.js?v=2c11b15b79c9"></script>
+  <script src="../src/engine/evaluation.js?v=c5c157817474"></script>
+  <script src="./engine-client.js?v=fbade64e7183"></script>
+  <script src="../src/engine/strong-cpu.js?v=ee2e21004a51"></script>
+  <script src="../src/engine/kishin-analysis.js?v=e2986d3235ce"></script>
+  <script src="./evaluation-ui.js?v=64d9275bac4f"></script>
+  <script src="./strong-play.js?v=dec4dc146940" data-game-src="../src/game.js?v=0b7a7f95b96c"></script>
 </body>
 </html>

@@ -46,3 +46,23 @@ test('playing gote queues a strong opening and undo restores matching USI histor
   const h=setup(),g=h.game;g.playerSide='gote';g.initNewMatch();await tick();const first=h.clients[0].searches[0];assert.equal(first.options.moves.length,0);first.resolve('7g7f');await tick();
   assert.equal(g.currentTurn,'gote');h.ui().undoMove();await tick();assert.equal(g.usiMoves.length,0);assert.equal(h.clients[0].searches[1].options.moves.length,0);await h.controller.dispose();
 });
+for(const [level,budget] of Object.entries({meijin:10000,pro:5000,amateur:1000}))test(`${level} selects the requested thinking time`,async()=>{
+  const h=setup(),g=h.game;g.cpuLevel=level;g.initNewMatch();await tick();g.makeMove(6,2,5,2);await tick();assert.equal(h.clients[0].searches[0].options.movetime,budget);await h.controller.dispose();
+});
+test('Kishin assists exactly one human move and automatically queues the opponent without a usage limit',async()=>{
+  const h=setup(),g=h.game;g.cpuLevel='amateur';g.initNewMatch();await tick();
+  for(let i=0;i<4;i++){
+    g.summonKishin();g.summonKishin();await tick();const client=h.clients.at(-1),assist=client.searches.at(-1);
+    assert(g.isAssisting);assert.equal(assist.options.movetime,10000);const before=client.searches.length;g.summonKishin();await tick();assert.equal(client.searches.length,before);
+    const move=g.getAllLegalMovesForPlayer(g.currentTurn)[0];const toUsi=m=>m.isDrop?({FU:'P',KY:'L',KE:'N',GI:'S',KI:'G',KA:'B',HI:'R'}[m.dropType]+'*'+(9-m.toC)+String.fromCharCode(97+m.toR)):''+(9-m.fromC)+String.fromCharCode(97+m.fromR)+(9-m.toC)+String.fromCharCode(97+m.toR)+(m.promote?'+':'');
+    assist.resolve(toUsi(move));await tick();assert.equal(g.isAssisting,false);assert.equal(g.currentTurn,'gote');const cpu=client.searches.at(-1);assert.equal(cpu.options.movetime,1000);cpu.resolve(toUsi(g.getAllLegalMovesForPlayer('gote')[0]));await tick();
+    assert.equal(g.currentTurn,'sente');assert.equal(g.moveHistory.length,(i+1)*2);
+  }
+  assert.equal(g.kishinRemaining,3);await h.controller.dispose();
+});
+test('paused or ended games reject assistance and late assisted moves',async()=>{
+  const h=setup(),g=h.game;g.initNewMatch();await tick();g.summonKishin();await tick();const search=h.clients[0].searches[0],key=g.positionKey();h.controller.pause();g.summonKishin();search.resolve('7g7f');await tick();assert.equal(g.positionKey(),key);assert.equal(g.isAssisting,false);await h.controller.dispose();
+});
+test('short clocks reduce the budget to avoid deliberate time forfeits',async()=>{
+  const h=setup(),g=h.game;g.cpuLevel='meijin';g.initNewMatch();await tick();g.makeMove(6,2,5,2);g.goteTime=3;await tick();assert.equal(h.clients[0].searches[0].options.movetime,2850);await h.controller.dispose();
+});

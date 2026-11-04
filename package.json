@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
-    "build:trial": "node scripts/build-strong-trial.cjs && tailwindcss -c scripts/strong-tailwind.config.cjs -i scripts/strong-tailwind.css -o /tmp/shogi-strong-tailwind.css --minify && node scripts/build-strong-style.cjs /tmp/shogi-strong-tailwind.css"
+    "build:trial": "node scripts/build-strong-trial.cjs && tailwindcss -c scripts/strong-tailwind.config.cjs -i scripts/strong-tailwind.css -o /tmp/shogi-strong-tailwind.css --minify && node scripts/build-strong-style.cjs /tmp/shogi-strong-tailwind.css && node scripts/build-strong-trial.cjs"
   },
   "engines": {
     "node": ">=20"

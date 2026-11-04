@@ -1,0 +1,34 @@
+<section class="strong-panel" aria-label="AI対局の状態">
+  <a href="../">通常対局へ戻る</a>
+  <h2>AI対局・棋神</h2>
+  <div class="level-scale" aria-label="CPUの思考時間">
+    <span>名人 <b>10秒</b></span><span>プロ <b>5秒</b></span><span>アマ <b>1秒</b></span>
+  </div>
+  <p>「新対局」でCPUを選択できます。いずれも弱化なしで、指定時間内の推奨手を指します。名称は思考時間の区分で、実在の段級位を表すものではありません。</p>
+  <p id="strong-status" role="status" aria-live="polite">CPUを準備しています…</p>
+  <div><button id="strong-pause" type="button">一時停止</button><button id="strong-resume" type="button" disabled>再開・再接続</button></div>
+  <p>画面を離れると対局と時計を一時停止します。棋神降臨はあなたの手番を最大10秒考えて1手代指しします。利用回数に制限はありません。</p>
+  <p><a href="./vendor/COPYING.txt">GPLv3ライセンス</a> · <a href="./vendor/NOTICE.txt">エンジン出典・対応ソース</a></p>
+</section>
+<section class="strong-panel evaluation-panel" aria-label="形勢分布">
+  <h2>形勢分布 <span id="advantage-number">未評価</span></h2>
+  <p id="advantage-description">CPUが思考すると表示されます。</p>
+  <div class="advantage-axis"><span>後手 −100</span><span>互角 0</span><span>先手 ＋100</span></div>
+  <div class="advantage-bar" role="img" aria-label="未評価" id="advantage-bar">
+    <div id="advantage-gote"></div><div id="advantage-sente"></div><i></i>
+  </div>
+  <div class="advantage-axis"><span id="gote-share">後手 —</span><span id="sente-share">先手 —</span></div>
+  <p class="explain">先手が有利なら＋、後手が有利なら−。表示はエンジン評価を−100〜＋100に縮めた目安で、勝率ではありません。</p>
+  <h3>形勢の推移</h3>
+  <svg id="evaluation-graph" viewBox="0 0 600 190" role="img" aria-label="まだ評価がありません"></svg>
+</section>
+<section id="analysis-panel" hidden class="strong-panel" aria-label="棋神解析">
+  <h2>棋神解析（無限）</h2>
+  <p>対局終了後、全局面の評価と推奨手を解析できます。何度でも実行でき、結果から過去の盤面を確認できます。</p>
+  <label for="analysis-time">1局面の解析時間</label>
+  <select id="analysis-time"><option value="1000">1秒</option><option value="5000">5秒</option><option value="10000">10秒</option></select>
+  <div><button id="analysis-start" disabled>棋神解析を開始（無限）</button><button id="analysis-stop" disabled>解析を停止</button><button id="analysis-copy" disabled>解析結果をコピー</button></div>
+  <p id="analysis-status" role="status" aria-live="polite">対局終了後に利用できます。</p>
+  <p id="analysis-review">結果の手数を押すと、その局面を表示します。</p>
+  <div id="analysis-results" class="analysis-results"></div>
+</section>
