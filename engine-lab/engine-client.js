@@ -40,16 +40,17 @@
         this.worker.postMessage({type:'init'});
         const {metrics}=await initialized;
         await this.request('usi','usiok');
-        for(const command of ['setoption name Threads value 1','setoption name USI_Hash value 16','setoption name USI_Ponder value false','setoption name USI_OwnBook value false','setoption name EnteringKingRule value NoEnteringKing','setoption name GenerateAllLegalMoves value true'])this.send(command);
+        for(const command of ['setoption name Threads value 1','setoption name USI_Hash value 16','setoption name USI_Ponder value false','setoption name USI_OwnBook value false','setoption name EnteringKingRule value NoEnteringKing','setoption name GenerateAllLegalMoves value true','setoption name SkillLevel value 20','setoption name DepthLimit value 0','setoption name NodesLimit value 0'])this.send(command);
         await this.request('isready','readyok');
         this.send('usinewgame');this.state='ready';return metrics;
       }catch(error){this.destroy(error);throw error;}
     }
-    async search(sfen,{movetime=1000,infinite=false}={}) {
+    async search(sfen,{movetime=1000,infinite=false,moves=null}={}) {
       if(this.state!=='ready')throw new Error('Engine is not ready');
       if(typeof sfen!=='string'||/[\r\n]/.test(sfen))throw new Error('Invalid SFEN');
       if(!Number.isInteger(movetime)||movetime<50||movetime>5000)throw new Error('Invalid search duration');
-      this.send('position sfen '+sfen);this.state='searching';const started=performance.now();
+      if(moves!==null && (!Array.isArray(moves)||moves.some(m=>typeof m!=='string'||!/^([1-9][a-i][1-9][a-i]\+?|[PLNSGBR]\*[1-9][a-i])$/.test(m))))throw new Error('Invalid USI history');
+      this.send(moves===null?'position sfen '+sfen:'position startpos'+(moves.length?' moves '+moves.join(' '):''));this.state='searching';const started=performance.now();
       try{
         const result=await this.request(infinite?'go infinite':`go movetime ${movetime}`,'bestmove',infinite?8000:movetime+5000);
         this.state='ready';return {bestmove:result.line.split(/\s+/)[1],elapsedMs:performance.now()-started};

@@ -17,7 +17,7 @@ function loadGame() {
     clearTimeout(key) {tasks.delete(key);}, setInterval: () => ++id, clearInterval() {}});
   const root = path.join(__dirname, '..');
   vm.runInContext(fs.readFileSync(path.join(root, 'src/domain/rules.js'), 'utf8'), context);
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'src/game.js'), 'utf8');
   const script = html.slice(html.indexOf('    class SoundEngine'), html.indexOf('    /* --- Immediate Self-Executing Bootloader'));
   vm.runInContext(script + ';globalThis.Game=ShogiGame;globalThis.UI=UIManager;sound.enabled=false;', context);
   const game = new context.Game();
