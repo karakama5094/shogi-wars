@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+JP:wght@600;900&family=M+PLUS+Rounded+1c:wght@700;900&display=swap');
+    [hidden] { display: none !important; }
 
     :root {
       --bg-dark: #070a12;
@@ -383,10 +384,10 @@
           <div>
             <div class="flex items-center gap-1.5">
               <span id="gote-name" class="font-bold text-sm text-slate-200">AI 思考エンジン</span>
-              <span id="gote-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">初段</span>
+              <span hidden id="gote-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">初段</span>
             </div>
             <div class="text-[11px] text-slate-400 flex items-center gap-2">
-              <span>Rate: <b id="gote-rate" class="text-slate-300">1550</b></span>
+              <span hidden>Rate: <b id="gote-rate" class="text-slate-300">1550</b></span>
               <span id="gote-thinking-badge" class="text-[10px] text-amber-400 hidden animate-pulse">⏳ 思考中...</span>
             </div>
           </div>
@@ -455,9 +456,9 @@
           <div>
             <div class="flex items-center gap-1.5">
               <span id="sente-name" class="font-bold text-sm text-slate-200">あなた (Player)</span>
-              <span id="sente-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1級</span>
+              <span hidden id="sente-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1級</span>
             </div>
-            <div class="text-[11px] text-slate-400 flex items-center gap-2">
+            <div hidden>
               <span>達成率: <b id="sente-progress" class="text-amber-400">76.4%</b></span>
               <div class="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden inline-block">
                 <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400" style="width: 76.4%;"></div>
@@ -477,7 +478,7 @@
 
       <!-- Kishin (棋神降臨) Special Ability Button -->
       <div class="w-full max-w-[430px] mt-3 flex gap-2">
-        <button id="btn-kishin" class="kishin-btn flex-1 py-3 px-4 rounded-xl text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg tracking-wider border-0">
+        <button id="btn-kishin" hidden class="kishin-btn flex-1 py-3 px-4 rounded-xl text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg tracking-wider border-0">
           <span>⚡</span>
           <span>棋神降臨！ (残 <span id="kishin-count">3</span> 回)</span>
         </button>
@@ -514,7 +515,7 @@
         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
           <div>手数: <b id="move-count" class="text-slate-200">0手</b></div>
           <div>ルール: <b id="match-rule-label" class="text-slate-200">10分切れ負け</b></div>
-          <div>AI強さ: <b id="ai-level-label" class="text-amber-400">中級 (標準)</b></div>
+          <div>AI強さ: <b id="ai-level-label" class="text-amber-400">簡易CPU</b></div>
           <div>王手判定: <b id="check-status-label" class="text-slate-400">なし</b></div>
         </div>
       </div>
@@ -595,19 +596,6 @@
       </div>
 
       <div class="space-y-4 text-xs font-semibold">
-        <!-- Mode -->
-        <div>
-          <label class="block text-slate-400 mb-1.5">対戦モード</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button class="mode-select-btn py-2 px-3 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold cursor-pointer" data-mode="ai">
-              🤖 vs AI
-            </button>
-            <button class="mode-select-btn py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold cursor-pointer" data-mode="pvp">
-              👥 2人対局 (オフライン)
-            </button>
-          </div>
-        </div>
-
         <!-- Time Control -->
         <div>
           <label class="block text-slate-400 mb-1.5">対局ルール (持ち時間)</label>
@@ -625,17 +613,17 @@
         </div>
 
         <!-- AI Difficulty -->
-        <div id="ai-difficulty-group">
+        <div hidden id="ai-difficulty-group">
           <label class="block text-slate-400 mb-1.5">AIの強さ</label>
           <div class="grid grid-cols-3 gap-2">
             <button class="ai-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-level="easy">
-              初級 (入門)
+              簡易CPU
             </button>
             <button class="ai-select-btn py-2 px-2 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer" data-level="medium">
-              中級 (標準)
+              簡易CPU
             </button>
             <button class="ai-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-level="hard">
-              上級 (本格)
+              簡易CPU
             </button>
           </div>
         </div>
@@ -714,6 +702,7 @@
   </div>
 
   <!-- JavaScript Game Engine -->
+  <script src="./src/domain/rules.js"></script>
   <script>
     /* --- Web Audio API Procedural Synthesizer --- */
     class SoundEngine {
@@ -819,19 +808,6 @@
     const sound = new SoundEngine();
 
     /* --- Piece Definitions & Constants --- */
-    const PIECE_NAMES = {
-      FU: '歩', KY: '香', KE: '桂', GI: '銀', KI: '金', KA: '角', HI: '飛', OU: '玉',
-      TO: 'と', NY: '成香', NK: '成桂', NG: '成銀', UM: '馬', RY: '竜'
-    };
-
-    const PROMOTABLE = { FU: 'TO', KY: 'NY', KE: 'NK', GI: 'NG', KA: 'UM', HI: 'RY' };
-    const UNPROMOTED = { TO: 'FU', NY: 'KY', NK: 'KE', NG: 'GI', UM: 'KA', RY: 'HI' };
-
-    const PIECE_VALUES = {
-      FU: 100, KY: 300, KE: 350, GI: 500, KI: 600, KA: 850, HI: 1000, OU: 20000,
-      TO: 550, NY: 500, NK: 500, NG: 550, UM: 1150, RY: 1300
-    };
-
     /* --- Shogi Wars Tactics & Castle Registry --- */
     const TACTICS_DB = [
       { id: 'yagura', name: '矢 倉', desc: '金銀3枚で玉を強固に守る王道の居飛車囲い', category: '囲い', unlocked: false },
@@ -846,51 +822,13 @@
     ];
 
     /* --- Initial Board Setup --- */
-    function getInitialBoard() {
-      const b = Array(9).fill(null).map(() => Array(9).fill(null));
-
-      // Gote Pieces (Row 0..2)
-      b[0][0] = { type: 'KY', player: 'gote' };
-      b[0][1] = { type: 'KE', player: 'gote' };
-      b[0][2] = { type: 'GI', player: 'gote' };
-      b[0][3] = { type: 'KI', player: 'gote' };
-      b[0][4] = { type: 'OU', player: 'gote' };
-      b[0][5] = { type: 'KI', player: 'gote' };
-      b[0][6] = { type: 'GI', player: 'gote' };
-      b[0][7] = { type: 'KE', player: 'gote' };
-      b[0][8] = { type: 'KY', player: 'gote' };
-
-      b[1][1] = { type: 'HI', player: 'gote' };
-      b[1][7] = { type: 'KA', player: 'gote' };
-
-      for (let c = 0; c < 9; c++) {
-        b[2][c] = { type: 'FU', player: 'gote' };
-      }
-
-      // Sente Pieces (Row 6..8)
-      for (let c = 0; c < 9; c++) {
-        b[6][c] = { type: 'FU', player: 'sente' };
-      }
-
-      b[7][1] = { type: 'KA', player: 'sente' };
-      b[7][7] = { type: 'HI', player: 'sente' };
-
-      b[8][0] = { type: 'KY', player: 'sente' };
-      b[8][1] = { type: 'KE', player: 'sente' };
-      b[8][2] = { type: 'GI', player: 'sente' };
-      b[8][3] = { type: 'KI', player: 'sente' };
-      b[8][4] = { type: 'OU', player: 'sente' };
-      b[8][5] = { type: 'KI', player: 'sente' };
-      b[8][6] = { type: 'GI', player: 'sente' };
-      b[8][7] = { type: 'KE', player: 'sente' };
-      b[8][8] = { type: 'KY', player: 'sente' };
-
-      return b;
-    }
-
-    /* --- Game State Class --- */
-    class ShogiGame {
+    class ShogiGame extends ShogiRules {
       constructor() {
+        super();
+        this.pendingTasks = new Set();
+        this.generation = 0;
+        this.result = null;
+        this.recordPosition();
         this.board = getInitialBoard();
         this.senteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
         this.goteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
@@ -925,7 +863,55 @@
         this.flipped = false;
       }
 
+      cancelPendingTasks() {
+        this.generation++;
+        for (const task of this.pendingTasks) clearTimeout(task);
+        this.pendingTasks.clear();
+        this.isKishinActive = false;
+        this.pendingPromoMove = null;
+        if (window.ui) {
+          window.ui.closeModal('promo-modal');
+          window.ui.showAiThinking(false);
+        }
+      }
+
+      schedule(callback, delay) {
+        const generation = this.generation;
+        const task = setTimeout(() => {
+          this.pendingTasks.delete(task);
+          if (generation === this.generation && !this.isGameOver) callback();
+        }, delay);
+        this.pendingTasks.add(task);
+      }
+
+      queueAiMove(delay = 450) {
+        if (this.isGameOver || this.currentTurn === this.playerSide) return;
+        if (window.ui) window.ui.showAiThinking(true);
+        this.schedule(() => {
+          if (this.currentTurn === this.playerSide) return;
+          this.executeAiMove();
+          if (window.ui) window.ui.showAiThinking(false);
+        }, delay);
+      }
+
+      finishGame(reason, loser = null) {
+        if (this.isGameOver) return;
+        this.isGameOver = true;
+        this.result = { reason, loser };
+        this.cancelPendingTasks();
+        clearInterval(this.timerInterval);
+        const labels = { repetition: '千日手・引き分け', 'perpetual-check': '連続王手の千日手・反則負け',
+          mate: '詰み', 'no-legal-move': '合法手なし', resign: '投了', timeout: '時間切れ' };
+        if (window.ui) {
+          window.ui.render();
+          window.ui.showCutIn('対局終了', labels[reason] + (loser ? ` / ${loser === 'sente' ? '後手' : '先手'}の勝ち` : ''), 'win');
+        }
+      }
+
       initNewMatch() {
+        this.cancelPendingTasks();
+        this.result = null;
+        this.gameMode = 'ai';
         this.board = getInitialBoard();
         this.senteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
         this.goteHand = { FU: 0, KY: 0, KE: 0, GI: 0, KI: 0, KA: 0, HI: 0 };
@@ -951,7 +937,8 @@
           this.goteTime = 10;
         }
         this.turnTimerSec = 10;
-
+        this.positionHistory = [];
+        this.recordPosition();
         this.startTimer();
       }
 
@@ -961,6 +948,7 @@
           senteHand: { ...this.senteHand },
           goteHand: { ...this.goteHand },
           currentTurn: this.currentTurn,
+          positionHistory: this.positionHistory.map(entry => ({ ...entry })),
           lastMove: this.lastMove ? { ...this.lastMove } : null,
           moveHistory: [...this.moveHistory],
           senteTime: this.senteTime,
@@ -971,289 +959,41 @@
 
       startTimer() {
         if (this.timerInterval) clearInterval(this.timerInterval);
+        this.clockUpdatedAt = performance.now();
         this.timerInterval = setInterval(() => {
-          if (this.isGameOver) return;
-
-          if (this.timeMode === '10sec') {
-            if (this.currentTurn === 'sente') {
-              this.senteTime--;
-              if (this.senteTime <= 3 && this.senteTime > 0) sound.playWarningSound();
-              if (this.senteTime <= 0) this.handleTimeout('sente');
-            } else {
-              this.goteTime--;
-              if (this.goteTime <= 3 && this.goteTime > 0) sound.playWarningSound();
-              if (this.goteTime <= 0) this.handleTimeout('gote');
-            }
-          } else {
-            if (this.currentTurn === 'sente') {
-              this.senteTime--;
-              if (this.senteTime <= 10 && this.senteTime > 0) sound.playWarningSound();
-              if (this.senteTime <= 0) this.handleTimeout('sente');
-            } else {
-              this.goteTime--;
-              if (this.goteTime <= 10 && this.goteTime > 0) sound.playWarningSound();
-              if (this.goteTime <= 0) this.handleTimeout('gote');
-            }
-          }
+          this.updateClock();
           if (window.ui) window.ui.updateTimers();
-        }, 1000);
+        }, 100);
+      }
+
+      updateClock() {
+        if (this.isGameOver) return;
+        const now = performance.now();
+        const elapsed = Math.max(0, now - (this.clockUpdatedAt ?? now)) / 1000;
+        this.clockUpdatedAt = now;
+        const key = this.currentTurn === 'sente' ? 'senteTime' : 'goteTime';
+        const before = Math.ceil(this[key]);
+        this[key] = Math.max(0, this[key] - elapsed);
+        const remaining = Math.ceil(this[key]);
+        if (remaining < before && remaining > 0 && remaining <= (this.timeMode === '10sec' ? 3 : 10)) sound.playWarningSound();
+        if (this[key] <= 0) this.handleTimeout(this.currentTurn);
       }
 
       handleTimeout(loser) {
-        this.isGameOver = true;
-        clearInterval(this.timerInterval);
-        const winner = loser === 'sente' ? '後手' : '先手';
-        if (window.ui) {
-          window.ui.showCutIn('勝 負 あ り !', `${loser === 'sente' ? '先手' : '後手'}が時間切れにより敗戦。${winner}の勝利です！`, 'win');
-        }
-      }
-
-      isValidPos(r, c) {
-        return r >= 0 && r < 9 && c >= 0 && c < 9;
-      }
-
-      getRawMoves(r, c, board = this.board) {
-        const piece = board[r][c];
-        if (!piece) return [];
-        const { type, player } = piece;
-        const moves = [];
-        const dir = player === 'sente' ? -1 : 1;
-
-        const addMove = (nr, nc) => {
-          if (!this.isValidPos(nr, nc)) return false;
-          const dest = board[nr][nc];
-          if (!dest) {
-            moves.push({ toR: nr, toC: nc });
-            return true;
-          }
-          if (dest.player !== player) {
-            moves.push({ toR: nr, toC: nc, capture: dest });
-            return false;
-          }
-          return false;
-        };
-
-        const addRay = (dr, dc) => {
-          let step = 1;
-          while (true) {
-            const nr = r + dr * step;
-            const nc = c + dc * step;
-            if (!this.isValidPos(nr, nc)) break;
-            const dest = board[nr][nc];
-            if (!dest) {
-              moves.push({ toR: nr, toC: nc });
-            } else {
-              if (dest.player !== player) {
-                moves.push({ toR: nr, toC: nc, capture: dest });
-              }
-              break;
-            }
-            step++;
-          }
-        };
-
-        switch (type) {
-          case 'FU':
-            addMove(r + dir, c);
-            break;
-          case 'KY':
-            addRay(dir, 0);
-            break;
-          case 'KE':
-            addMove(r + dir * 2, c - 1);
-            addMove(r + dir * 2, c + 1);
-            break;
-          case 'GI':
-            addMove(r + dir, c);
-            addMove(r + dir, c - 1);
-            addMove(r + dir, c + 1);
-            addMove(r - dir, c - 1);
-            addMove(r - dir, c + 1);
-            break;
-          case 'KI':
-          case 'TO':
-          case 'NY':
-          case 'NK':
-          case 'NG':
-            addMove(r + dir, c);
-            addMove(r + dir, c - 1);
-            addMove(r + dir, c + 1);
-            addMove(r, c - 1);
-            addMove(r, c + 1);
-            addMove(r - dir, c);
-            break;
-          case 'KA':
-            addRay(1, 1); addRay(1, -1); addRay(-1, 1); addRay(-1, -1);
-            break;
-          case 'UM':
-            addRay(1, 1); addRay(1, -1); addRay(-1, 1); addRay(-1, -1);
-            addMove(r + 1, c); addMove(r - 1, c); addMove(r, c + 1); addMove(r, c - 1);
-            break;
-          case 'HI':
-            addRay(1, 0); addRay(-1, 0); addRay(0, 1); addRay(0, -1);
-            break;
-          case 'RY':
-            addRay(1, 0); addRay(-1, 0); addRay(0, 1); addRay(0, -1);
-            addMove(r + 1, c + 1); addMove(r + 1, c - 1); addMove(r - 1, c + 1); addMove(r - 1, c - 1);
-            break;
-          case 'OU':
-            for (let dr = -1; dr <= 1; dr++) {
-              for (let dc = -1; dc <= 1; dc++) {
-                if (dr !== 0 || dc !== 0) addMove(r + dr, c + dc);
-              }
-            }
-            break;
-        }
-
-        return moves;
-      }
-
-      isKingInCheck(player, board = this.board) {
-        let kR = -1, kC = -1;
-        for (let r = 0; r < 9; r++) {
-          for (let c = 0; c < 9; c++) {
-            const p = board[r][c];
-            if (p && p.player === player && p.type === 'OU') {
-              kR = r; kC = c; break;
-            }
-          }
-          if (kR !== -1) break;
-        }
-        if (kR === -1) return false;
-
-        const opponent = player === 'sente' ? 'gote' : 'sente';
-        for (let r = 0; r < 9; r++) {
-          for (let c = 0; c < 9; c++) {
-            const p = board[r][c];
-            if (p && p.player === opponent) {
-              const raw = this.getRawMoves(r, c, board);
-              if (raw.some(m => m.toR === kR && m.toC === kC)) {
-                return true;
-              }
-            }
-          }
-        }
-        return false;
-      }
-
-      getLegalMoves(r, c) {
-        const piece = this.board[r][c];
-        if (!piece || piece.player !== this.currentTurn) return [];
-
-        const raw = this.getRawMoves(r, c);
-        return raw.filter(move => {
-          const originalDest = this.board[move.toR][move.toC];
-          this.board[move.toR][move.toC] = piece;
-          this.board[r][c] = null;
-
-          const inCheck = this.isKingInCheck(this.currentTurn);
-
-          this.board[r][c] = piece;
-          this.board[move.toR][move.toC] = originalDest;
-          return !inCheck;
-        });
-      }
-
-      getLegalDrops(type, player = this.currentTurn) {
-        const drops = [];
-        const isSente = player === 'sente';
-
-        const columnHasFriendlyPawn = (c) => {
-          for (let r = 0; r < 9; r++) {
-            const p = this.board[r][c];
-            if (p && p.player === player && p.type === 'FU') return true;
-          }
-          return false;
-        };
-
-        for (let r = 0; r < 9; r++) {
-          for (let c = 0; c < 9; c++) {
-            if (this.board[r][c] !== null) continue;
-
-            if (type === 'FU' || type === 'KY') {
-              if (isSente && r === 0) continue;
-              if (!isSente && r === 8) continue;
-            }
-            if (type === 'KE') {
-              if (isSente && r <= 1) continue;
-              if (!isSente && r >= 7) continue;
-            }
-
-            if (type === 'FU' && columnHasFriendlyPawn(c)) continue;
-
-            if (type === 'FU') {
-              this.board[r][c] = { type: 'FU', player };
-              const opp = isSente ? 'gote' : 'sente';
-              if (this.isKingInCheck(opp)) {
-                if (this.hasNoLegalMoves(opp)) {
-                  this.board[r][c] = null;
-                  continue;
-                }
-              }
-              this.board[r][c] = null;
-            }
-
-            this.board[r][c] = { type, player };
-            const inCheck = this.isKingInCheck(player);
-            this.board[r][c] = null;
-
-            if (!inCheck) {
-              drops.push({ toR: r, toC: c, isDrop: true, dropType: type });
-            }
-          }
-        }
-        return drops;
-      }
-
-      hasNoLegalMoves(player) {
-        const hand = player === 'sente' ? this.senteHand : this.goteHand;
-
-        for (let r = 0; r < 9; r++) {
-          for (let c = 0; c < 9; c++) {
-            const p = this.board[r][c];
-            if (p && p.player === player) {
-              const raw = this.getRawMoves(r, c);
-              for (const m of raw) {
-                const orig = this.board[m.toR][m.toC];
-                this.board[m.toR][m.toC] = p;
-                this.board[r][c] = null;
-                const inCheck = this.isKingInCheck(player);
-                this.board[r][c] = p;
-                this.board[m.toR][m.toC] = orig;
-                if (!inCheck) return false;
-              }
-            }
-          }
-        }
-
-        for (const [type, count] of Object.entries(hand)) {
-          if (count > 0) {
-            const drops = this.getLegalDrops(type, player);
-            if (drops.length > 0) return false;
-          }
-        }
-
-        return true;
-      }
-
-      checkPromotionStatus(fromR, toR, pieceType, player) {
-        if (!PROMOTABLE[pieceType]) return { canPromote: false, mustPromote: false };
-
-        const isSente = player === 'sente';
-        const inZone = isSente ? (toR <= 2 || fromR <= 2) : (toR >= 6 || fromR >= 6);
-        if (!inZone) return { canPromote: false, mustPromote: false };
-
-        let must = false;
-        if (pieceType === 'FU' || pieceType === 'KY') {
-          if ((isSente && toR === 0) || (!isSente && toR === 8)) must = true;
-        } else if (pieceType === 'KE') {
-          if ((isSente && toR <= 1) || (!isSente && toR >= 7)) must = true;
-        }
-
-        return { canPromote: true, mustPromote: must };
+        this.finishGame('timeout', loser);
       }
 
       makeMove(fromR, fromC, toR, toC, promote = false) {
+        if (this.isGameOver || ![fromR, fromC, toR, toC].every(Number.isInteger) ||
+            !this.isValidPos(fromR, fromC) || !this.isValidPos(toR, toC)) return false;
+        const moving = this.board[fromR][fromC];
+        if (!moving || moving.player !== this.currentTurn) return false;
+        const promotion = this.checkPromotionStatus(fromR, toR, moving.type, moving.player);
+        if ((promote && !promotion.canPromote) || (!promote && promotion.mustPromote)) return false;
+        if (!this.getLegalMoves(fromR, fromC).some(m => m.toR === toR && m.toC === toC)) return false;
+        this.updateClock();
+        if (this.isGameOver) return false;
+        this.cancelPendingTasks();
         this.saveSnapshot();
 
         const piece = this.board[fromR][fromC];
@@ -1280,13 +1020,17 @@
         this.moveHistory.push(entry);
 
         this.postMoveCheck(piece.player);
+        return true;
       }
 
       makeDrop(toR, toC, type) {
-        this.saveSnapshot();
-
+        if (this.isGameOver || !Number.isInteger(toR) || !Number.isInteger(toC) || !this.isValidPos(toR, toC)) return false;
         const hand = this.currentTurn === 'sente' ? this.senteHand : this.goteHand;
-        if (!hand[type] || hand[type] <= 0) return;
+        if (!(hand[type] > 0) || !this.getLegalDrops(type).some(m => m.toR === toR && m.toC === toC)) return false;
+        this.updateClock();
+        if (this.isGameOver) return false;
+        this.cancelPendingTasks();
+        this.saveSnapshot();
 
         hand[type]--;
         this.board[toR][toC] = { type, player: this.currentTurn };
@@ -1301,6 +1045,7 @@
         this.moveHistory.push(entry);
 
         this.postMoveCheck(this.currentTurn);
+        return true;
       }
 
       postMoveCheck(playerMoved) {
@@ -1308,37 +1053,29 @@
 
         const nextTurn = this.currentTurn === 'sente' ? 'gote' : 'sente';
         this.currentTurn = nextTurn;
+        this.clockUpdatedAt = performance.now();
 
         if (this.timeMode === '10sec') {
           if (nextTurn === 'sente') this.senteTime = 10;
           else this.goteTime = 10;
         }
 
+        const repetition = this.recordPosition(playerMoved);
+        if (repetition) {
+          this.finishGame(repetition.reason, repetition.loser);
+          return;
+        }
         const inCheck = this.isKingInCheck(nextTurn);
+        if (this.hasNoLegalMoves(nextTurn)) {
+          this.finishGame(inCheck ? 'mate' : 'no-legal-move', nextTurn);
+          return;
+        }
         if (inCheck) {
           sound.playCheckSound();
           if (window.ui) window.ui.triggerCheckAnimation();
-
-          if (this.hasNoLegalMoves(nextTurn)) {
-            this.isGameOver = true;
-            clearInterval(this.timerInterval);
-            const winner = playerMoved === 'sente' ? '先手' : '後手';
-            setTimeout(() => {
-              if (window.ui) window.ui.showCutIn('詰 み ! (CHECKMATE)', `${winner}の鮮やかな詰みによる勝利です！`, 'win');
-            }, 700);
-            return;
-          }
         }
-
         if (window.ui) window.ui.render();
-
-        if (!this.isGameOver && this.gameMode === 'ai' && this.currentTurn !== this.playerSide) {
-          if (window.ui) window.ui.showAiThinking(true);
-          setTimeout(() => {
-            this.executeAiMove();
-            if (window.ui) window.ui.showAiThinking(false);
-          }, 450);
-        }
+        this.queueAiMove();
       }
 
       detectTactics(player) {
@@ -1461,6 +1198,7 @@
             if (piece && piece.player === player) {
               const raw = this.getRawMoves(r, c);
               for (const m of raw) {
+                if (this.board[m.toR][m.toC]?.type === 'OU') continue;
                 const orig = this.board[m.toR][m.toC];
                 this.board[m.toR][m.toC] = piece;
                 this.board[r][c] = null;
@@ -1552,11 +1290,10 @@
       }
 
       executeAiMove() {
-        if (this.isGameOver) return;
+        if (this.isGameOver || this.currentTurn === this.playerSide) return;
         const move = this.getBestMove(this.currentTurn, 2);
         if (!move) {
-          this.isGameOver = true;
-          if (window.ui) window.ui.showCutIn('投 了', 'AIが投了しました。あなたの勝利です！', 'win');
+          this.finishGame('no-legal-move', this.currentTurn);
           return;
         }
 
@@ -1579,7 +1316,7 @@
         document.getElementById('kishin-count').textContent = this.kishinRemaining;
 
         sound.playKishinSound();
-        if (window.ui) window.ui.showCutIn('⚡ 棋神降臨 ⚡', '最高峰のAIが覚醒！5手連続で最善手を代指しします！', 'kishin');
+        if (window.ui) window.ui.showCutIn('⚡ 棋神降臨 ⚡', '参考手を自動で指します', 'kishin');
 
         let steps = 0;
         const maxSteps = 5;
@@ -1604,13 +1341,13 @@
           }
 
           if (steps < maxSteps && !this.isGameOver) {
-            setTimeout(kishinStep, 850);
+            this.schedule(kishinStep, 850);
           } else {
             this.isKishinActive = false;
           }
         };
 
-        setTimeout(kishinStep, 1100);
+        this.schedule(kishinStep, 1100);
       }
     }
 
@@ -1618,6 +1355,7 @@
     class UIManager {
       constructor(game) {
         this.game = game;
+        this.draftSettings = { timeMode: game.timeMode, playerSide: game.playerSide };
         this.boardEl = document.getElementById('shogi-board');
         this.toastContainer = document.getElementById('toast-container');
         this.initDOM();
@@ -1670,24 +1408,13 @@
       }
 
       initModalSelectors() {
-        document.querySelectorAll('.mode-select-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.mode-select-btn').forEach(b => {
-              b.className = 'mode-select-btn py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold cursor-pointer';
-            });
-            btn.className = 'mode-select-btn py-2 px-3 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold cursor-pointer';
-            this.game.gameMode = btn.dataset.mode;
-            document.getElementById('ai-difficulty-group').style.display = btn.dataset.mode === 'ai' ? 'block' : 'none';
-          });
-        });
-
         document.querySelectorAll('.time-select-btn').forEach(btn => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('.time-select-btn').forEach(b => {
               b.className = 'time-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer';
             });
             btn.className = 'time-select-btn py-2 px-2 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer';
-            this.game.timeMode = btn.dataset.time;
+            this.draftSettings.timeMode = btn.dataset.time;
           });
         });
 
@@ -1707,7 +1434,7 @@
               b.className = 'turn-select-btn py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer';
             });
             btn.className = 'turn-select-btn py-2 px-3 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer';
-            this.game.playerSide = btn.dataset.turn;
+            this.draftSettings.playerSide = btn.dataset.turn;
           });
         });
       }
@@ -1723,21 +1450,22 @@
 
       startConfiguredMatch() {
         this.closeModal('newgame-modal');
+        Object.assign(this.game, this.draftSettings);
         document.getElementById('match-rule-label').textContent =
           this.game.timeMode === '10min' ? '10分切れ負け' :
           this.game.timeMode === '3min' ? '3分切れ負け' : '10秒将棋';
         document.getElementById('ai-level-label').textContent =
-          this.game.aiLevel === 'easy' ? '初級 (入門)' :
-          this.game.aiLevel === 'medium' ? '中級 (標準)' : '上級 (本格)';
+          '簡易CPU（エンジン強化前）';
 
         this.game.initNewMatch();
         this.render();
+        this.updateTimers();
 
         sound.playTacticSound();
         this.showCutIn('対 局 開 始 !', `${document.getElementById('match-rule-label').textContent} / 気合を入れて挑め！`, 'start');
 
         if (this.game.gameMode === 'ai' && this.game.playerSide === 'gote') {
-          setTimeout(() => this.game.executeAiMove(), 800);
+          this.game.queueAiMove(800);
         }
       }
 
@@ -1826,6 +1554,7 @@
 
       resolvePromotion(promote) {
         this.closeModal('promo-modal');
+        if (this.game.isGameOver) return;
         if (!this.game.pendingPromoMove) return;
         const { fromR, fromC, toR, toC } = this.game.pendingPromoMove;
         this.game.makeMove(fromR, fromC, toR, toC, promote);
@@ -1983,8 +1712,9 @@
 
       updateTimers() {
         const fmt = (s) => {
-          const m = Math.floor(Math.max(0, s) / 60);
-          const sec = Math.max(0, s) % 60;
+          const whole = Math.ceil(Math.max(0, s));
+          const m = Math.floor(whole / 60);
+          const sec = whole % 60;
           return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
         };
 
@@ -2098,16 +1828,15 @@
       }
 
       handleResign() {
-        if (this.game.isGameOver) return;
-        this.game.isGameOver = true;
-        clearInterval(this.game.timerInterval);
-        this.showCutIn('投 了', '投了しました。対局終了です。', 'win');
+        this.game.finishGame('resign', this.game.playerSide);
       }
 
       showHint() {
-        if (this.game.isGameOver) return;
+        if (this.game.isGameOver || this.game.currentTurn !== this.game.playerSide) return;
         const best = this.game.getBestMove(this.game.currentTurn, 2);
         if (best) {
+          this.game.selectedCell = null;
+          this.game.selectedHandPiece = null;
           if (best.isDrop) {
             this.game.selectedHandPiece = best.dropType;
             this.game.validDestinations = [{ toR: best.toR, toC: best.toC }];
@@ -2117,17 +1846,20 @@
           }
           this.render();
           sound.playWarningSound();
-          this.showToast('AI推奨手をハイライト表示しました', 'info');
+          this.showToast('CPU参考手をハイライト表示しました', 'info');
         }
       }
 
       undoMove() {
+        this.game.updateClock();
         if (this.game.boardHistory.length === 0 || this.game.isGameOver) {
           this.showToast('戻せる手がありません', 'info');
           return;
         }
 
-        let steps = (this.game.gameMode === 'ai' && this.game.boardHistory.length >= 2) ? 2 : 1;
+        this.game.cancelPendingTasks();
+        // Return to the human's previous decision, including when CPU is still waiting.
+        let steps = this.game.currentTurn === this.game.playerSide ? 2 : 1;
         let snap = null;
         while (steps > 0 && this.game.boardHistory.length > 0) {
           snap = this.game.boardHistory.pop();
@@ -2139,10 +1871,12 @@
           this.game.senteHand = snap.senteHand;
           this.game.goteHand = snap.goteHand;
           this.game.currentTurn = snap.currentTurn;
+          this.game.positionHistory = snap.positionHistory;
           this.game.lastMove = snap.lastMove;
           this.game.moveHistory = snap.moveHistory;
           this.game.senteTime = snap.senteTime;
           this.game.goteTime = snap.goteTime;
+          this.game.clockUpdatedAt = performance.now();
 
           this.game.selectedCell = null;
           this.game.selectedHandPiece = null;
@@ -2152,6 +1886,7 @@
           this.updateTimers();
           sound.playPieceSound();
           this.showToast('局面を戻しました（待った成立）', 'info');
+          this.game.queueAiMove();
         }
       }
 
@@ -2235,3 +1970,4 @@
   </script>
 </body>
 </html>
+
