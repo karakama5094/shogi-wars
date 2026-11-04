@@ -35,3 +35,12 @@ test('invalid search limits and newline injection are rejected before posting co
   const {client:c,workers:w}=harness();await c.start();const count=w[0].commands.length;
   await assert.rejects(c.search('sfen',{movetime:6000}));await assert.rejects(c.search('sfen\nquit'));assert.equal(w[0].commands.length,count);c.destroy();
 });
+test('strong settings are explicit and USI history is transmitted without losing repetitions',async()=>{
+  const {client:c,workers:w}=harness();await c.start();
+  assert(w[0].commands.some(x=>x.command==='setoption name SkillLevel value 20'));
+  assert(w[0].commands.some(x=>x.command==='setoption name DepthLimit value 0'));
+  assert(w[0].commands.some(x=>x.command==='setoption name NodesLimit value 0'));
+  const search=c.search('unused',{movetime:5000,moves:['7g7f','3c3d']});
+  assert(w[0].commands.some(x=>x.command==='position startpos moves 7g7f 3c3d'));c.stop();await search;
+  const count=w[0].commands.length;await assert.rejects(c.search('sfen',{moves:['7g7f\nquit']}));assert.equal(w[0].commands.length,count);await c.destroy();
+});

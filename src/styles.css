@@ -1,0 +1,309 @@
+
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+JP:wght@600;900&family=M+PLUS+Rounded+1c:wght@700;900&display=swap');
+    [hidden] { display: none !important; }
+
+    :root {
+      --bg-dark: #070a12;
+      --bg-card: rgba(16, 23, 38, 0.95);
+      --gold-primary: #f59e0b;
+      --gold-light: #fde047;
+      --gold-glow: rgba(245, 158, 11, 0.5);
+      --cyber-blue: #38bdf8;
+      --cyber-red: #ef4444;
+      --board-wood: #e7bf85;
+      --board-wood-dark: #cf9f5d;
+      --board-grid: #4a2810;
+      --piece-wood: #fff6e5;
+      --piece-wood-dark: #edd7b5;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #152238 0%, #070a12 100%);
+      color: #f1f5f9;
+      font-family: 'M PLUS Rounded 1c', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-bottom: 30px;
+    }
+
+    /* Shogi Wars Golden Typography */
+    .wars-title {
+      font-family: 'Noto Serif JP', 'Cinzel', serif;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fffbeb 0%, #fde047 30%, #eab308 60%, #b45309 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 8px rgba(234, 179, 8, 0.4));
+    }
+
+    .wars-banner {
+      background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.4), rgba(234, 179, 8, 0.2), transparent);
+      border-top: 1px solid rgba(253, 224, 71, 0.3);
+      border-bottom: 1px solid rgba(253, 224, 71, 0.3);
+    }
+
+    /* Glows & Neon */
+    .gold-box-glow {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2);
+    }
+    .red-box-glow {
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.7), inset 0 0 10px rgba(239, 68, 68, 0.3);
+      animation: dangerPulse 1s infinite alternate;
+    }
+    @keyframes dangerPulse {
+      0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+      100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 25px rgba(239, 68, 68, 0.9); }
+    }
+
+    /* Kishin Aura Button */
+    .kishin-btn {
+      background: linear-gradient(135deg, #b45309, #f59e0b, #fef08a, #d97706);
+      background-size: 250% 250%;
+      animation: kishinGradient 3s ease infinite;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+    }
+    .kishin-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 30px rgba(253, 224, 71, 0.9);
+    }
+    .kishin-btn:active {
+      transform: scale(0.97);
+    }
+    @keyframes kishinGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Robust Standalone Shogi Board styling */
+    .shogi-board-wrap {
+      background: #38200d;
+      border: 4px solid #6b411d;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      touch-action: manipulation;
+      display: inline-block;
+    }
+
+    .shogi-board-grid {
+      display: grid !important;
+      grid-template-columns: repeat(9, 1fr) !important;
+      grid-template-rows: repeat(9, 1fr) !important;
+      width: 350px;
+      height: 380px;
+      max-width: 90vw;
+      max-height: 96vw;
+      background: linear-gradient(135deg, var(--board-wood) 0%, var(--board-wood-dark) 100%);
+      border: 2px solid var(--board-grid);
+    }
+
+    @media (min-width: 640px) {
+      .shogi-board-grid {
+        width: 420px;
+        height: 455px;
+      }
+    }
+
+    .board-cell {
+      position: relative;
+      border-right: 1px solid var(--board-grid);
+      border-bottom: 1px solid var(--board-grid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .board-cell:nth-child(9n) { border-right: none; }
+    .board-cell:nth-last-child(-n+9) { border-bottom: none; }
+
+    /* Hoshi dots (星) */
+    .board-cell.hoshi::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: var(--board-grid);
+      border-radius: 50%;
+      top: -3px;
+      left: -3px;
+      z-index: 5;
+    }
+
+    /* Traditional Shogi Piece Shape */
+    .shogi-piece {
+      width: 88%;
+      height: 92%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Noto Serif JP', "Yu Mincho", serif;
+      font-weight: 900;
+      position: relative;
+      clip-path: polygon(50% 0%, 94% 20%, 86% 100%, 14% 100%, 6% 20%);
+      background: linear-gradient(180deg, var(--piece-wood) 0%, var(--piece-wood-dark) 100%);
+      border-bottom: 2px solid #8e6834;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      transition: transform 0.15s ease, filter 0.15s ease;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .shogi-piece.gote {
+      transform: rotate(180deg);
+      background: linear-gradient(180deg, #edd7b5 0%, #ddc49e 100%);
+    }
+
+    .piece-text {
+      line-height: 1;
+      font-size: 1.15rem;
+      letter-spacing: -1px;
+      color: #1a1a1a;
+      text-shadow: 0 0 1px rgba(255,255,255,0.8);
+      font-weight: 900;
+    }
+
+    @media (max-width: 480px) {
+      .piece-text { font-size: 0.95rem; }
+    }
+
+    .piece-text.promoted {
+      color: #dc2626 !important;
+      font-weight: 900;
+      text-shadow: 0 0 3px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Highlight States */
+    .cell-selected {
+      background: rgba(245, 158, 11, 0.55) !important;
+      box-shadow: inset 0 0 12px rgba(253, 224, 71, 0.9);
+    }
+    .cell-last-move {
+      background: rgba(56, 189, 248, 0.38) !important;
+    }
+    .cell-movable::before {
+      content: '';
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      background: #10b981;
+      opacity: 0.9;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      z-index: 10;
+    }
+    .cell-capture::before {
+      content: '';
+      position: absolute;
+      width: 82%;
+      height: 82%;
+      border: 3px solid #ef4444;
+      border-radius: 50%;
+      animation: captureRing 1.2s infinite ease-in-out;
+      z-index: 10;
+    }
+    @keyframes captureRing {
+      0%, 100% { transform: scale(0.85); opacity: 0.6; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    .cell-check {
+      background: rgba(239, 68, 68, 0.6) !important;
+      animation: checkPulse 0.8s infinite alternate;
+    }
+    @keyframes checkPulse {
+      0% { box-shadow: inset 0 0 5px rgba(239, 68, 68, 0.5); }
+      100% { box-shadow: inset 0 0 25px rgba(239, 68, 68, 1); }
+    }
+
+    /* Hand Pieces on Komadai */
+    .hand-piece-item {
+      position: relative;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .hand-piece-item:hover {
+      transform: translateY(-2px);
+    }
+    .hand-piece-item.active {
+      transform: translateY(-4px) scale(1.1);
+      filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.9));
+    }
+    .hand-count-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      background: #b45309;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 900;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #fef08a;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Full-Screen Wars Cut-In Animations */
+    #cutin-overlay {
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+    }
+    #cutin-overlay.active {
+      display: flex;
+    }
+
+    @keyframes cutinSlideIn {
+      0% { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+      20% { transform: translateX(0%) skewX(-5deg); opacity: 1; }
+      80% { transform: translateX(0%) skewX(-5deg); opacity: 1; }
+      100% { transform: translateX(120%) skewX(15deg); opacity: 0; }
+    }
+
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 4px); }
+      40% { transform: translate(6px, -4px); }
+      60% { transform: translate(-4px, -2px); }
+      80% { transform: translate(4px, 2px); }
+    }
+    .shake-active {
+      animation: screenShake 0.4s ease;
+    }
+
+    @keyframes thunderFlash {
+      0% { background: rgba(255, 230, 0, 0.8); }
+      30% { background: rgba(255, 255, 255, 0.95); }
+      100% { background: transparent; }
+    }
+
+    /* In-page Toast Notifications */
+    .toast-msg {
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.3s ease 2.7s forwards;
+    }
+    @keyframes toastIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes toastOut {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-10px); opacity: 0; }
+    }

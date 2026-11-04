@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>最強CPU・1手5秒（試験） | shogi-wars</title>
+  <link rel="stylesheet" href="./strong-play.css">
+</head>
+<body class="flex flex-col items-center justify-start pb-10">
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-6 z-50 flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <!-- Full-Screen Cut-In Overlay -->
+  <div id="cutin-overlay" class="fixed inset-0 flex items-center justify-center overflow-hidden">
+    <div id="cutin-flash" class="absolute inset-0 pointer-events-none"></div>
+    <div id="cutin-content" class="relative z-10 w-full max-w-2xl px-6 py-8 flex flex-col items-center justify-center text-center">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="w-full max-w-4xl px-4 py-3 flex items-center justify-between border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/30">
+        <span class="text-slate-950 font-black text-xl font-serif">王</span>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="wars-title font-black text-lg md:text-xl tracking-wider">将棋ウォーズ</h1>
+          <span class="text-[10px] font-bold tracking-widest px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">WEB EDITION</span>
+        </div>
+        <p class="text-[11px] text-slate-400">やねうら王・最強設定 / 1手最大5秒（試験）</p>
+      </div>
+    </div>
+
+    <!-- Quick action buttons -->
+    <div class="flex items-center gap-1.5 md:gap-2">
+      <button id="btn-sound" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1 border border-slate-700 text-slate-300 transition cursor-pointer">
+        <span>🔊</span>
+        <span class="hidden md:inline">音声 ON</span>
+      </button>
+      <button id="btn-collection" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1 border border-slate-700 text-amber-300 transition cursor-pointer">
+        <span>📖</span>
+        <span>戦法図鑑</span>
+      </button>
+      <button id="btn-rule" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1 border border-slate-700 text-slate-300 transition cursor-pointer">
+        <span>❓</span>
+        <span class="hidden md:inline">ルール</span>
+      </button>
+      <button id="btn-new-game" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1 transition cursor-pointer">
+        <span>▶</span>
+        <span>新対局</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="strong-panel" aria-label="最強CPUの状態">
+    <a href="../">通常対局へ戻る</a>
+    <h2>最強CPU・1手最大5秒（試験）</h2>
+    <p>やねうら王＋水匠Petite。弱化なし・探索1スレッド。画面を離れると対局と時計を一時停止します。長時間の安定性・発熱は検証中です。</p>
+    <p id="strong-status" role="status" aria-live="polite">CPUを準備しています…</p>
+    <div><button id="strong-pause" type="button">一時停止</button><button id="strong-resume" type="button" disabled>再開・再接続</button></div>
+    <p><a href="./vendor/COPYING.txt">GPLv3ライセンス</a> · <a href="./vendor/NOTICE.txt">エンジン出典・対応ソース</a></p>
+  </section>
+  <!-- Main Container -->
+  <main class="w-full max-w-4xl p-2 md:p-4 flex flex-col md:flex-row gap-4 justify-center items-start">
+
+    <!-- Left Column: Shogi Board Area -->
+    <div class="w-full md:w-auto flex flex-col items-center">
+
+      <!-- Gote (Opponent) Status Card & Hand -->
+      <div id="gote-card" class="w-full max-w-[430px] mb-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 shadow-md transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="relative">
+            <div class="w-11 h-11 rounded-full bg-slate-800 border-2 border-amber-500/60 overflow-hidden flex items-center justify-center text-xl shadow-inner">
+              🤖
+            </div>
+            <span class="absolute -bottom-1 -right-1 text-[9px] font-black bg-rose-600 text-white px-1.5 py-0.2 rounded-full border border-slate-900">後手</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="gote-name" class="font-bold text-sm text-slate-200">AI 思考エンジン</span>
+              <span hidden id="gote-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">初段</span>
+            </div>
+            <div class="text-[11px] text-slate-400 flex items-center gap-2">
+              <span hidden>Rate: <b id="gote-rate" class="text-slate-300">1550</b></span>
+              <span id="gote-thinking-badge" class="text-[10px] text-amber-400 hidden animate-pulse">⏳ 思考中...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gote Timer -->
+        <div class="flex flex-col items-end">
+          <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">持ち時間</span>
+          <div id="gote-timer" class="font-mono font-black text-2xl tracking-wider text-slate-200 px-3 py-0.5 rounded-lg bg-slate-950 border border-slate-800">
+            10:00
+          </div>
+        </div>
+      </div>
+
+      <!-- Gote Komadai (Captured Pieces) -->
+      <div class="w-full max-w-[430px] mb-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-900/50 flex items-center justify-between min-h-[46px]">
+        <span class="text-[11px] font-bold text-amber-400/80 mr-2 flex items-center gap-1">
+          △ 後手持駒:
+        </span>
+        <div id="gote-hand" class="flex-1 flex flex-wrap gap-2 justify-end items-center">
+          <span class="text-xs text-slate-500 italic">なし</span>
+        </div>
+      </div>
+
+      <!-- Shogi 9x9 Board -->
+      <div class="relative">
+        <!-- Coordinate row numbers (9..1) -->
+        <div class="flex justify-between w-full max-w-[430px] px-3 pb-1 text-[11px] font-bold text-amber-500/70">
+          <span>9</span><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+        </div>
+
+        <div class="flex items-center">
+          <!-- The 9x9 Board -->
+          <div class="shogi-board-wrap p-1.5 shadow-2xl">
+            <div id="shogi-board" class="shogi-board-grid">
+              <!-- 81 cells will be populated immediately -->
+            </div>
+          </div>
+
+          <!-- Coordinate rank letters (一..九) -->
+          <div class="flex flex-col justify-around h-[380px] sm:h-[455px] pl-1.5 text-[11px] font-bold text-amber-500/70">
+            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>七</span><span>八</span><span>九</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sente Komadai (Player's Captured Pieces) -->
+      <div class="w-full max-w-[430px] mt-2 px-3 py-1.5 rounded-lg bg-amber-950/40 border border-amber-900/50 flex items-center justify-between min-h-[46px]">
+        <span class="text-[11px] font-bold text-amber-400/80 mr-2 flex items-center gap-1">
+          ▲ 先手持駒:
+        </span>
+        <div id="sente-hand" class="flex-1 flex flex-wrap gap-2 justify-start items-center">
+          <span class="text-xs text-slate-500 italic">なし</span>
+        </div>
+      </div>
+
+      <!-- Sente (Player) Status Card -->
+      <div id="sente-card" class="w-full max-w-[430px] mt-2 p-2.5 rounded-xl bg-slate-900/90 border flex items-center justify-between gap-3 shadow-md transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="relative">
+            <div class="w-11 h-11 rounded-full bg-slate-800 border-2 border-emerald-500/70 overflow-hidden flex items-center justify-center text-xl shadow-inner">
+              🥷
+            </div>
+            <span class="absolute -bottom-1 -right-1 text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.2 rounded-full border border-slate-900">先手</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="sente-name" class="font-bold text-sm text-slate-200">あなた (Player)</span>
+              <span hidden id="sente-rank" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1級</span>
+            </div>
+            <div hidden>
+              <span>達成率: <b id="sente-progress" class="text-amber-400">76.4%</b></span>
+              <div class="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden inline-block">
+                <div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400" style="width: 76.4%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sente Timer -->
+        <div class="flex flex-col items-end">
+          <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">持ち時間</span>
+          <div id="sente-timer" class="font-mono font-black text-2xl tracking-wider text-slate-200 px-3 py-0.5 rounded-lg bg-slate-950 border border-slate-800">
+            10:00
+          </div>
+        </div>
+      </div>
+
+      <!-- Kishin (棋神降臨) Special Ability Button -->
+      <div class="w-full max-w-[430px] mt-3 flex gap-2">
+        <button id="btn-kishin" hidden class="kishin-btn flex-1 py-3 px-4 rounded-xl text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg tracking-wider border-0">
+          <span>⚡</span>
+          <span>棋神降臨！ (残 <span id="kishin-count">3</span> 回)</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Match Control & Tactical HUD Area -->
+    <div class="w-full md:w-80 flex flex-col gap-3">
+
+      <!-- Match Info & Gauge Card -->
+      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-lg">
+        <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-800">
+          <span class="text-xs font-bold text-slate-400">対局ステータス</span>
+          <span id="turn-badge" class="px-2 py-0.5 rounded text-xs font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            ▲ 先手番
+          </span>
+        </div>
+
+        <!-- Evaluation Bar (形勢判断バー) -->
+        <div hidden class="mb-3">
+          <div class="flex justify-between text-[11px] font-bold mb-1">
+            <span class="text-emerald-400">▲ 先手優勢</span>
+            <span id="eval-score" class="text-slate-300 font-mono">互角 (0)</span>
+            <span class="text-rose-400">後手優勢 △</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex p-0.5 border border-slate-700">
+            <div id="eval-bar-sente" class="h-full bg-emerald-500 transition-all duration-300 rounded-l-full" style="width: 50%;"></div>
+            <div id="eval-bar-gote" class="h-full bg-rose-500 transition-all duration-300 rounded-r-full" style="width: 50%;"></div>
+          </div>
+        </div>
+
+        <!-- Match stats details -->
+        <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+          <div>手数: <b id="move-count" class="text-slate-200">0手</b></div>
+          <div>ルール: <b id="match-rule-label" class="text-slate-200">10分切れ負け</b></div>
+          <div>AI強さ: <b id="ai-level-label" class="text-amber-400">最強設定・最大5秒</b></div>
+          <div>王手判定: <b id="check-status-label" class="text-slate-400">なし</b></div>
+        </div>
+      </div>
+
+      <!-- Action Buttons Panel -->
+      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-lg flex flex-col gap-2">
+        <div class="text-xs font-bold text-slate-400 mb-1">対局操作</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-undo" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer">
+            <span>↩</span>
+            <span>待った</span>
+          </button>
+          <button hidden id="btn-hint" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer">
+            <span>💡</span>
+            <span>ヒント</span>
+          </button>
+          <button id="btn-flip" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer">
+            <span>🔄</span>
+            <span>盤面反転</span>
+          </button>
+          <button id="btn-resign" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-rose-950/50 hover:border-rose-700/80 text-xs font-bold text-rose-300 flex items-center justify-center gap-1.5 border border-slate-700 transition cursor-pointer">
+            <span>🏳</span>
+            <span>投了</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Move History / Kifu Card -->
+      <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-lg flex-1 flex flex-col min-h-[180px]">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+          <span class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+            <span>📜</span> 棋譜履歴
+          </span>
+          <button id="btn-copy-kifu" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 transition cursor-pointer">
+            <span>📋</span> 棋譜コピー
+          </button>
+        </div>
+        <div id="kifu-list" class="flex-1 overflow-y-auto max-h-44 space-y-1 text-xs font-mono text-slate-300 pr-1">
+          <div class="text-slate-500 italic py-2 text-center">対局中</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modals -->
+
+  <!-- 1. Promotion Choice Modal -->
+  <div id="promo-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-slate-900 border-2 border-amber-500/60 p-6 shadow-2xl flex flex-col items-center gold-box-glow">
+      <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500 flex items-center justify-center text-amber-400 text-2xl mb-3">
+        ⬆️
+      </div>
+      <h3 class="text-lg font-black text-amber-300 mb-1">駒の成り判定</h3>
+      <p class="text-xs text-slate-400 mb-6 text-center">敵陣に到達しました。成りますか？</p>
+
+      <div class="grid grid-cols-2 gap-4 w-full">
+        <button id="btn-promote-yes" class="py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-extrabold text-base shadow-lg shadow-red-600/30 flex flex-col items-center justify-center gap-1 transition cursor-pointer border-0">
+          <span id="promo-piece-name" class="text-2xl font-serif font-black text-white">成</span>
+          <span>成る (Promote)</span>
+        </button>
+        <button id="btn-promote-no" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-base border border-slate-700 flex flex-col items-center justify-center gap-1 transition cursor-pointer">
+          <span id="unpromo-piece-name" class="text-2xl font-serif font-black text-slate-300">原</span>
+          <span>不成 (Stay)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. New Game Settings Modal -->
+  <div id="newgame-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 class="wars-title font-black text-lg">新規対局設定</h3>
+        <button id="modal-close-newgame" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center text-sm cursor-pointer border-0">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs font-semibold">
+        <!-- Time Control -->
+        <div>
+          <label class="block text-slate-400 mb-1.5">対局ルール (持ち時間)</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="time-select-btn py-2 px-2 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer" data-time="10min">
+              10分切れ負け
+            </button>
+            <button class="time-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-time="3min">
+              3分切れ負け
+            </button>
+            <button class="time-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-time="10sec">
+              10秒将棋
+            </button>
+          </div>
+        </div>
+
+        <!-- AI Difficulty -->
+        <div hidden id="ai-difficulty-group">
+          <label class="block text-slate-400 mb-1.5">AIの強さ</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="ai-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-level="easy">
+              簡易CPU
+            </button>
+            <button class="ai-select-btn py-2 px-2 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer" data-level="medium">
+              簡易CPU
+            </button>
+            <button class="ai-select-btn py-2 px-2 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-level="hard">
+              簡易CPU
+            </button>
+          </div>
+        </div>
+
+        <!-- Player Turn -->
+        <div>
+          <label class="block text-slate-400 mb-1.5">手番</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="turn-select-btn py-2 px-3 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-center cursor-pointer" data-turn="sente">
+              先手 (▲ 下側)
+            </button>
+            <button class="turn-select-btn py-2 px-3 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 font-bold text-center cursor-pointer" data-turn="gote">
+              後手 (△ 上側)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-start-match" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black text-sm tracking-wider shadow-lg shadow-amber-500/30 transition cursor-pointer border-0">
+        対局開始
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Tactic & Castle Collection Modal -->
+  <div id="collection-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📖</span>
+          <h3 class="wars-title font-black text-lg">戦法・囲い図鑑</h3>
+        </div>
+        <button id="modal-close-collection" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center text-sm cursor-pointer border-0">
+          ✕
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-3">対局中に成立するとウォーズ風のド派手なカットインが発動します！</p>
+
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="collection-list">
+        <!-- Dynamically rendered tactic badges -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Rule Help Modal -->
+  <div id="rule-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+        <h3 class="wars-title font-black text-lg">将棋ウォーズ ルール解説</h3>
+        <button id="modal-close-rule" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center text-sm cursor-pointer border-0">
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300 pr-1 leading-relaxed">
+        <div>
+          <h4 class="font-bold text-amber-400 mb-1 text-sm">1. 切れ負けルール</h4>
+          <p class="text-slate-400">将棋ウォーズの特徴である「持ち時間ゼロで即座に負け（時間切れ負け）」システムです。10分、3分、または10秒（1手10秒未満）のスピード勝負となります。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-amber-400 mb-1 text-sm">2. 棋神降臨（きしんこうりん）</h4>
+          <p class="text-slate-400">対局中、画面下の「棋神降臨」ボタンを押すと、最高峰AIがあなたの代わりに最善手を自動で5手指してくれます。形勢が不利な時や詰みを逃したくない決定打に有効です。</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-amber-400 mb-1 text-sm">3. 禁じ手（反則）</h4>
+          <ul class="list-disc list-inside text-slate-400 space-y-0.5 mt-1">
+            <li><b>二歩:</b> 同じ筋に自分の成っていない歩を2枚打つことはできません。</li>
+            <li><b>打ち歩詰め:</b> 持ち駒の歩を打って相手玉を詰ますと反則負けです。</li>
+            <li><b>行き所のない駒:</b> 先手は1段目（桂馬は1,2段目）に歩・香・桂を打つことはできません。</li>
+            <li><b>連続王手の千日手:</b> 王手のみを繰り返して同一局面が4回出現すると王手側が反則負けとなります。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Game Engine -->
+  <script src="../src/domain/rules.js"></script>
+  <script src="../src/engine/usi-position.js"></script>
+  <script src="./engine-client.js"></script>
+  <script src="../src/engine/strong-cpu.js"></script>
+  <script src="./strong-play.js"></script>
+</body>
+</html>
