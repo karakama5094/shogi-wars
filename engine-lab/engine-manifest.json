@@ -1,0 +1,22 @@
+{
+  "package": "@mizarjp/yaneuraou.k-p",
+  "version": "7.6.3-alpha.0",
+  "sourceCommit": "c9c34f240f89b611ca34060466e61220b0d3180c",
+  "wasmUrl": "https://cdn.jsdelivr.net/npm/@mizarjp/yaneuraou.k-p@7.6.3-alpha.0/lib/yaneuraou.k-p.wasm",
+  "assets": {
+    "yaneuraou.k-p.js": {
+      "bytes": 51240,
+      "sha256": "108ac00b15b03c7068f235700acf720460e4da06ebfa7cd507c0152374cb0226"
+    },
+    "yaneuraou.k-p.worker.js": {
+      "bytes": 3051,
+      "sha256": "0565ebd7d471d3487f09d3e4b4ad555f33d600469d3419f42670123834d04e54"
+    },
+    "yaneuraou.k-p.wasm": {
+      "bytes": 1446554,
+      "sha256": "7a302cd6fae269aac49f0b3447678d930f3c7e4153b0d72aef7655fb18d7139e"
+    }
+  },
+  "localLoaderSha256": "3c37df34e15b2740e4aa8e4b2c1b4f5c68f6f299c68cfe9ccf589ded1be7a716",
+  "modification": "Initial pthread pool 32 -> 2; search Threads=1; local loader only, WASM unchanged."
+}

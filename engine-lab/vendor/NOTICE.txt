@@ -1,0 +1,34 @@
+YaneuraOu WASM proof of concept — third-party notices
+
+Engine: YaneuraOu NNUE K-P / SuishoPetite (2021-11)
+Package: @mizarjp/yaneuraou.k-p 7.6.3-alpha.0, by Mizar
+Engine authors: yaneurao and YaneuraOu / Stockfish contributors.
+Embedded evaluation credited by the package to たややん＠水匠 (tayayan).
+Package declared license: GPL-3.0. See COPYING.txt.
+Package README: https://cdn.jsdelivr.net/npm/@mizarjp/yaneuraou.k-p@7.6.3-alpha.0/README.md
+Unmodified package: https://registry.npmjs.org/@mizarjp/yaneuraou.k-p/-/yaneuraou.k-p-7.6.3-alpha.0.tgz
+
+Corresponding engine source pinned by the package's gitHead:
+https://github.com/mizar/YaneuraOu.wasm/tree/c9c34f240f89b611ca34060466e61220b0d3180c
+https://github.com/mizar/YaneuraOu.wasm/archive/c9c34f240f89b611ca34060466e61220b0d3180c.tar.gz
+Build instructions/scripts:
+https://github.com/mizar/YaneuraOu.wasm/blob/c9c34f240f89b611ca34060466e61220b0d3180c/script/wasm_build.js
+https://github.com/mizar/YaneuraOu.wasm/blob/c9c34f240f89b611ca34060466e61220b0d3180c/script/wasm_docker_build.js
+Embedded evaluation source referenced by that build script:
+https://github.com/mizar/YaneuraOu/releases/download/resource/suishopetite_20211123.k_p.nnue.cpp.gz
+
+Local changes on 2026-11-04:
+In vendor/yaneuraou.k-p.js, change exactly one initial pthread-pool bound:
+  Jb:function(){for(var a=0;32>a;++a)C.Qa()}
+->Jb:function(){for(var a=0;2>a;++a)C.Qa()}
+No modification to the WASM or worker.js. Original and local SHA-256 hashes
+are recorded in ../engine-manifest.json. scripts/verify-engine-assets.cjs
+verifies the loader modification and the upstream package integrity.
+
+The candidate repository was archived in 2022. This old, third-party build is
+being evaluated, not certified as the production engine. Package declarations
+are the present basis for this PoC's license provenance; the final engine
+release must include a complete, reproducible source/evaluation audit.
+
+The new engine-lab adapter, UI and isolation scripts are GPL-3.0-only.
+This notice does not change the license of the pre-existing application.

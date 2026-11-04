@@ -1,0 +1,247 @@
+{
+  "timestamp": "2026-11-04T05:08:11.657Z",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+  "hardwareConcurrency": 5,
+  "features": {
+    "secureContext": true,
+    "wasm": true,
+    "simd": true,
+    "isolated": true,
+    "sharedMemory": true,
+    "worker": true
+  },
+  "configuration": {
+    "threads": 1,
+    "hashMiB": 16,
+    "initialPool": 2,
+    "wasmMemoryLimitMiB": 256
+  },
+  "checks": [
+    {
+      "label": "エンジン起動とUSI接続",
+      "pass": true,
+      "detail": "399ms / WASM 140MiB"
+    },
+    {
+      "label": "起動時間の暫定目標（5秒以内）",
+      "pass": true,
+      "detail": "初回取得を含む参考値。キャッシュ条件は別途確認"
+    },
+    {
+      "label": "初期局面の合法手",
+      "pass": true,
+      "detail": "7g7f / 1002ms"
+    },
+    {
+      "label": "後手局面の合法手",
+      "pass": true,
+      "detail": "3c3d / 1001ms"
+    },
+    {
+      "label": "持駒のある局面の合法手",
+      "pass": true,
+      "detail": "3a3b / 1000ms"
+    },
+    {
+      "label": "思考停止（500ms以内）",
+      "pass": true,
+      "detail": "0ms"
+    },
+    {
+      "label": "再起動後の合法手",
+      "pass": true,
+      "detail": "2g2f / 201ms"
+    },
+    {
+      "label": "再起動",
+      "pass": true,
+      "detail": "356ms"
+    },
+    {
+      "label": "画面応答の参考値（間隔250ms未満）",
+      "pass": true,
+      "detail": "50ms。バックグラウンド中の測定は無効"
+    }
+  ],
+  "searches": [
+    {
+      "label": "初期局面の合法手",
+      "bestmove": "7g7f",
+      "elapsedMs": 1001.7549999998882,
+      "info": {
+        "depth": 17,
+        "nodes": 475477,
+        "nps": 511815,
+        "time": 929,
+        "score": {
+          "type": "cp",
+          "value": 32
+        },
+        "pv": [
+          "7g7f",
+          "3c3d",
+          "2g2f",
+          "8c8d",
+          "2f2e",
+          "4a3b",
+          "6i7h",
+          "8d8e",
+          "8h7g",
+          "2b3c",
+          "3i4h",
+          "7c7d",
+          "9g9f",
+          "7a6b",
+          "3g3f",
+          "8a7c",
+          "6g6f"
+        ]
+      },
+      "wasmMemoryBytes": 146604032,
+      "workerCount": 2
+    },
+    {
+      "label": "後手局面の合法手",
+      "bestmove": "3c3d",
+      "elapsedMs": 1001.0200000000186,
+      "info": {
+        "depth": 19,
+        "nodes": 377478,
+        "nps": 583428,
+        "time": 647,
+        "score": {
+          "type": "cp",
+          "value": -23
+        },
+        "pv": [
+          "3c3d",
+          "2g2f",
+          "4a3b",
+          "6i7h",
+          "8c8d",
+          "2f2e",
+          "8d8e",
+          "8h7g",
+          "2b3c",
+          "6g6f",
+          "7a6b",
+          "3i4h",
+          "7c7d",
+          "3g3f",
+          "4c4d",
+          "7i6h",
+          "9c9d",
+          "2i3g",
+          "3a4b",
+          "9g9f",
+          "1c1d",
+          "6h6g",
+          "8a7c",
+          "4i5h"
+        ]
+      },
+      "wasmMemoryBytes": 146604032,
+      "workerCount": 2
+    },
+    {
+      "label": "持駒のある局面の合法手",
+      "bestmove": "3a3b",
+      "elapsedMs": 999.8950000000186,
+      "info": {
+        "depth": 14,
+        "nodes": 436399,
+        "nps": 506851,
+        "time": 861,
+        "score": {
+          "type": "cp",
+          "value": 37
+        },
+        "pv": [
+          "3a3b",
+          "7i8h",
+          "3b3c",
+          "6i7h",
+          "5a4b",
+          "3i4h",
+          "7a6b",
+          "3g3f",
+          "7c7d",
+          "4h3g",
+          "8a7c",
+          "3g4f",
+          "8e8f",
+          "8g8f",
+          "8b8f"
+        ]
+      },
+      "wasmMemoryBytes": 146604032,
+      "workerCount": 2
+    },
+    {
+      "label": "再起動後の合法手",
+      "bestmove": "2g2f",
+      "elapsedMs": 201.39500000001863,
+      "info": {
+        "depth": 11,
+        "nodes": 69253,
+        "nps": 567647,
+        "time": 122,
+        "score": {
+          "type": "cp",
+          "value": 53
+        },
+        "pv": [
+          "2g2f",
+          "3c3d",
+          "7g7f",
+          "2b3c",
+          "3i4h",
+          "3a4b",
+          "9g9f",
+          "8c8d",
+          "6i7h",
+          "4a3b",
+          "3g3f",
+          "8d8e",
+          "4h3g"
+        ]
+      },
+      "wasmMemoryBytes": 146604032,
+      "workerCount": 2
+    }
+  ],
+  "engineErrors": [],
+  "engineName": "YaneuraOu NNUE KP256 7.63 32WASM TOURNAMENT",
+  "startup": {
+    "downloadMs": 47.74500000011176,
+    "initMs": 302.45000000018626,
+    "wasmBytes": 1446554,
+    "wasmMemoryBytes": 146604032,
+    "initialWorkerPool": 2,
+    "memoryLimitBytes": 268435456,
+    "version": "7.6.3-alpha.0",
+    "sha256": "7a302cd6fae269aac49f0b3447678d930f3c7e4153b0d72aef7655fb18d7139e",
+    "totalReadyMs": 399.2349999998696
+  },
+  "stop": {
+    "latencyMs": 0.3249999997206032,
+    "bestmove": "2g2f"
+  },
+  "restartMs": 355.6399999996647,
+  "maxUiHeartbeatGapMs": 50.419999999925494,
+  "finished": true,
+  "testEnvironment": {
+    "platform": "Linux Chromium 151 / Playwright 1.62.1",
+    "viewport": "390x844 touch/mobile emulation; not an iPhone",
+    "wasmTransport": "SHA-256-verified jsDelivr file replayed locally",
+    "externalCdnDownload": "HTTPS download and SHA-256 separately verified",
+    "workerCleanup": "All engine and nested Workers closed within 1909ms after completion",
+    "extraChecks": [
+      "normal game has 81 board cells",
+      "normal game not controlled by lab Service Worker",
+      "cancel and retry",
+      "HTTP 503 handling",
+      "WASM integrity failure handling"
+    ]
+  }
+}

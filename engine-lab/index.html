@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AIエンジン検証 | shogi-wars</title>
+  <link rel="stylesheet" href="./lab.css">
+  <script defer src="../src/domain/rules.js"></script>
+  <script defer src="../src/engine/usi-position.js"></script>
+  <script defer src="./engine-client.js"></script>
+  <script defer src="./lab.js"></script>
+</head>
+<body>
+  <main>
+    <a class="back" href="../">← 将棋アプリへ</a>
+    <p class="eyebrow">SHOGI-WARS / ENGINE LAB</p>
+    <h1>本格AIの動作を確かめる</h1>
+    <p class="intro">やねうら王＋水匠Petiteの試験画面です。起動、合法手、停止、再起動を自動で確認します。対局中のCPU設定には影響しません。</p>
+    <section class="panel">
+      <h2>iPhoneでの確認</h2>
+      <p>Safariで開き、画面を表示したまま「検証を開始」を押してください。初回は準備のため1回だけ再読み込みします。WASM本体は約1.45MBです。ブラウザの初期化を含め、結果が出るまで最大数分かかります。</p>
+      <div class="actions">
+        <button id="start" type="button">検証を開始</button>
+        <button id="cancel" type="button" disabled>中止</button>
+      </div>
+      <p id="status" role="status" aria-live="polite">準備ができました</p>
+      <p id="progress" class="muted"></p>
+    </section>
+    <section class="panel">
+      <h2>検証結果</h2>
+      <ul id="results"><li>開始すると結果がここに表示されます。</li></ul>
+      <button id="copy" type="button" disabled>結果をコピー</button>
+      <pre id="report" tabindex="0" aria-label="検証結果の全文"></pre>
+    </section>
+    <details class="panel"><summary>実行条件・ライセンス</summary>
+      <p>試験候補：@mizarjp/yaneuraou.k-p 7.6.3-alpha.0（旧版）。探索1スレッド、初期Workerプール2、Hash 16MiB、WASMメモリ上限256MiBです。メモリ表示はWASM領域のみで、Safari全体の使用量ではありません。</p>
+      <p>GitHub Pagesではこの検証画面の範囲だけにService Workerで実行条件を付与します。通常の対局ページは制御しません。SharedArrayBuffer・SIMD非対応時は実行せず理由を表示します。</p>
+      <p>エンジンファイルをjsDelivrから取得します。検証結果や棋譜をサーバーへ送信しません。製品用エンジンの採用はまだ確定していません。</p>
+      <p><a href="./vendor/COPYING.txt">GPLv3ライセンス</a> · <a href="./vendor/NOTICE.txt">出典・変更点・対応ソース</a> · <a href="https://github.com/mizar/YaneuraOu.wasm/tree/c9c34f240f89b611ca34060466e61220b0d3180c">エンジンソース</a></p>
+    </details>
+  </main>
+</body>
+</html>

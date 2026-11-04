@@ -1,0 +1,16 @@
+/* Only /engine-lab/ clients are controlled. No cache and no interception outside scope. */
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  event.respondWith((async () => {
+    const response = await fetch(request);
+    if (response.status === 0 || response.status === 304) return response;
+    const headers = new Headers(response.headers);
+    headers.set('Cross-Origin-Opener-Policy','same-origin');
+    headers.set('Cross-Origin-Embedder-Policy','require-corp');
+    headers.set('Cross-Origin-Resource-Policy','same-origin');
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  })());
+});
