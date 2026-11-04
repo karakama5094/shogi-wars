@@ -121,6 +121,7 @@
         super();
         this.cpu = null;
         this.isPreparing = false;
+        this.isAssisting = false;
         this.isPaused = false;
         this.usiMoves = [];
         this.pendingTasks = new Set();
@@ -613,6 +614,7 @@
       }
 
       summonKishin() {
+        if (this.cpu) { this.cpu.assist(); return; }
         if (this.kishinRemaining <= 0 || this.isKishinActive || this.isGameOver) return;
         if (this.currentTurn !== this.playerSide) {
           if (window.ui) window.ui.showToast('あなたの手番でのみ棋神を降臨できます。', 'info');
@@ -779,7 +781,7 @@
       }
 
       handleCellClick(r, c) {
-        if (this.game.isGameOver || this.game.isPaused || this.game.isPreparing) return;
+        if (this.game.isGameOver || this.game.isPaused || this.game.isPreparing || this.game.isAssisting) return;
         if (this.game.gameMode === 'ai' && this.game.currentTurn !== this.game.playerSide) return;
 
         if (this.game.selectedHandPiece) {
@@ -839,7 +841,7 @@
       }
 
       handleHandClick(type, player) {
-        if (this.game.isGameOver || this.game.isPaused || this.game.isPreparing) return;
+        if (this.game.isGameOver || this.game.isPaused || this.game.isPreparing || this.game.isAssisting) return;
         if (player !== this.game.currentTurn) return;
         if (this.game.gameMode === 'ai' && this.game.currentTurn !== this.game.playerSide) return;
 

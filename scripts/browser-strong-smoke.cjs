@@ -30,7 +30,7 @@ const http=require('node:http'),fs=require('node:fs/promises'),path=require('nod
     assert(await page.evaluate(()=>crossOriginIsolated));
     assert.equal(await page.evaluate(()=>game.cpu.movetime),5000);
     assert.equal(await page.locator('#btn-hint').isVisible(),false);
-    assert.equal(await page.locator('#btn-kishin').isVisible(),false);
+    assert.equal(await page.locator('#btn-kishin').isVisible(),true);
     const board=await page.locator('#shogi-board').boundingBox();assert(board.width<=390);
     let began=Date.now();
     await page.locator('.board-cell').nth(6*9+2).click();await page.locator('.board-cell').nth(5*9+2).click();
